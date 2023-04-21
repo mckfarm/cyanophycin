@@ -7,6 +7,10 @@ output: html_notebook
 # package import
 library(tidyverse)
 library(dplyr)
+library(MetBrewer)
+
+source("./plotting.R")
+
 ```
 
 
@@ -109,11 +113,13 @@ mcdaniel %>% filter(product == "Cyanophycin synthetase") %>%
 
 ```{r}
 
-mcdaniel %>% filter(product == "Cyanophycin synthetase") %>%
+mcdaniel %>% filter(product %in% c("Cyanophycin synthetase", "Polyphosphate kinase")) %>%
   filter(bin %in% c("UW4-IA", "UW6-IIC")) %>%
   ggplot(data = ., aes(x = sample, y = tpm, fill = gene)) +
   facet_wrap(~bin) + 
-  geom_bar(stat = "identity", position = "dodge")
+  geom_bar(stat = "identity", position = "dodge") +
+  theme_defaults +
+  scale_fill_manual(values = met.brewer("NewKingdom", 3, reverse))
 
 ```
 
