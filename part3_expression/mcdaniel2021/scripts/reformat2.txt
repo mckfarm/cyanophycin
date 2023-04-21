@@ -1,6 +1,0 @@
-/projects/b1052/mckenna/cyanophycin/mcdaniel2021/clean_reads/aer_1315_clean.fastq	/projects/b1052/mckenna/cyanophycin/mcdaniel2021/clean_reads/aer_1315_clean_1.fastq	/projects/b1052/mckenna/cyanophycin/mcdaniel2021/clean_reads/aer_1315_clean_2.fastq
-/projects/b1052/mckenna/cyanophycin/mcdaniel2021/clean_reads/aer_1240_clean.fastq	/projects/b1052/mckenna/cyanophycin/mcdaniel2021/clean_reads/aer_1240_clean_1.fastq	/projects/b1052/mckenna/cyanophycin/mcdaniel2021/clean_reads/aer_1240_clean_2.fastq
-/projects/b1052/mckenna/cyanophycin/mcdaniel2021/clean_reads/ana_1155_clean.fastq	/projects/b1052/mckenna/cyanophycin/mcdaniel2021/clean_reads/ana_1155_clean_1.fastq	/projects/b1052/mckenna/cyanophycin/mcdaniel2021/clean_reads/ana_1155_clean_2.fastq
-/projects/b1052/mckenna/cyanophycin/mcdaniel2021/clean_reads/ana_1116_clean.fastq	/projects/b1052/mckenna/cyanophycin/mcdaniel2021/clean_reads/ana_1116_clean_1.fastq	/projects/b1052/mckenna/cyanophycin/mcdaniel2021/clean_reads/ana_1116_clean_2.fastq
-/projects/b1052/mckenna/cyanophycin/mcdaniel2021/clean_reads/ana_1050_clean.fastq	/projects/b1052/mckenna/cyanophycin/mcdaniel2021/clean_reads/ana_1050_clean_1.fastq	/projects/b1052/mckenna/cyanophycin/mcdaniel2021/clean_reads/ana_1050_clean_2.fastq
-

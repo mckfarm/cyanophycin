@@ -1,8 +1,0 @@
-sample
-aer_1455
-aer_1355
-aer_1315
-aer_1240
-ana_1155
-ana_1116
-ana_1045

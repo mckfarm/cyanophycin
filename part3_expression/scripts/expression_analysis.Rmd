@@ -1,0 +1,121 @@
+---
+title: "Transcript parsing"
+output: html_notebook
+---
+
+```{r}
+# package import
+library(tidyverse)
+library(dplyr)
+```
+
+
+# Read in and cleaning
+Read in all abundance outputs from Kallisto and prokka, then clean and save to a big df
+
+
+## McDaniel
+
+```{r}
+# Kallisto
+
+path_data <- "./part3_expression/data/mcdaniel"
+
+samples <- read.table(file.path(path_data, "sample_list.txt"), header=TRUE)
+
+data_list <- list()
+
+for(i in 1:nrow(samples)) {
+  samples[["path"]][i] <- file.path(path_data, samples[["sample"]][i], "abundance.tsv")
+  tmp <- read.table(samples[["path"]][i], header=TRUE)
+  tmp[["sample"]] <- samples[["sample"]][i]
+  data_list[[i]] <- tmp
+  rm(tmp)
+}
+
+kallisto <- do.call(rbind, data_list)
+
+# refactor
+kallisto <- kallisto %>%
+  mutate(sample = factor(sample, 
+         levels = c("ana_1045", "ana_1116", "ana_1155", "aer_1240", "aer_1315", "aer_1355", "aer_1455"))) %>%
+  rename(locus_tag = target_id)
+
+# prokka
+annotations <- read.csv(file.path(path_data, "all_annotations.csv"), header=TRUE)
+annotations <- annotations %>% filter(ftype=="CDS")
+
+# merge
+mcdaniel <- left_join(annotations, kallisto, by = "locus_tag")
+
+# clean up
+rm(data_list, samples, kallisto, annotations, path_data, i)
+
+
+```
+
+
+
+## Wang
+```{r}
+
+path_data <- "./part3_expression/data/wang"
+
+samples <- read.table(file.path(path_data, "sample_list.txt"), header=TRUE)
+
+data_list <- list()
+
+for(i in 1:nrow(samples)) {
+  samples[["path"]][i] <- file.path(path_data, samples[["sample"]][i], "abundance.tsv")
+  tmp <- read.table(samples[["path"]][i], header=TRUE)
+  tmp[["sample"]] <- samples[["sample"]][i]
+  data_list[[i]] <- tmp
+  rm(tmp)
+}
+
+kallisto <- do.call(rbind, data_list)
+
+# refactor
+kallisto <- kallisto %>%
+  mutate(sample = factor(sample, 
+         levels = c("ana_ac", "anx_ac", "aer_ac", "ana_pr", "anx_pr", "aer_pr"))) %>%
+  rename(locus_tag = target_id)
+
+# prokka
+annotations <- read.csv(file.path(path_data, "all_annotations.csv"), header=TRUE)
+annotations <- annotations %>% filter(ftype=="CDS")
+
+# merge
+wang <- left_join(annotations, kallisto, by = "locus_tag")
+
+# clean up
+rm(data_list, samples, kallisto, annotations, path_data, i)
+
+
+```
+
+
+# Analysis
+
+## Summary stats
+```{r}
+mcdaniel %>% filter(product == "Cyanophycin synthetase") %>%
+  group_by(bin, gene) %>% summarise(tpm_mean = mean(tpm), tpm_stdev = sd(tpm))
+
+
+
+```
+
+
+```{r}
+
+mcdaniel %>% filter(product == "Cyanophycin synthetase") %>%
+  filter(bin %in% c("UW4-IA", "UW6-IIC")) %>%
+  ggplot(data = ., aes(x = sample, y = tpm, fill = gene)) +
+  facet_wrap(~bin) + 
+  geom_bar(stat = "identity", position = "dodge")
+
+```
+
+
+

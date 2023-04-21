@@ -1,6 +1,0 @@
-concatenation commands performed directly in Quest:
-
-
-concat all coding regions for kallisto index
-cd /projects/b1052/mckenna/cyanophycin/mcdaniel2021/prokka
-cat ./*/*.ffn > cds_allmags.ffn
