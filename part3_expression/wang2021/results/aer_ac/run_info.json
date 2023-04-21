@@ -1,0 +1,13 @@
+{
+	"n_targets": 15594,
+	"n_bootstraps": 0,
+	"n_processed": 6490954,
+	"n_pseudoaligned": 2875668,
+	"n_unique": 2832621,
+	"p_pseudoaligned": 44.3,
+	"p_unique": 43.6,
+	"kallisto_version": "0.46.1",
+	"index_version": 10,
+	"start_time": "Thu Nov 11 15:34:47 2021",
+	"call": "kallisto quant -i /projects/b1052/McKenna/cyanophycin/gaohan2021/kallisto/allmags.idx -o /projects/b1052/McKenna/cyanophycin/gaohan2021/kallisto/aer_ac /projects/b1052/McKenna/cyanophycin/gaohan2021/clean_reads/aer_ac_clean_1.fastq /projects/b1052/McKenna/cyanophycin/gaohan2021/clean_reads/aer_ac_clean_2.fastq"
+}

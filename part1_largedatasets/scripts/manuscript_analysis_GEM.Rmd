@@ -1,0 +1,42 @@
+---
+title: "GEM metagenome results"
+output: html_notebook
+---
+
+Results and analysis for GEM metagenomes for cyanophycin analysis
+
+
+```{r package read in}
+
+library(tidyverse)
+library(readxl)
+library(MetBrewer)
+library(ggplot2)
+library(cowplot)
+library(VennDiagram)
+
+```
+
+
+```{r data read in}
+
+working_dir <- file.path("./working/data/GEM")
+
+summary_hq <- read_csv(file.path(working_dir, "prokkaGEM_hq_cphA.csv"))
+summary_mq <- read_csv(file.path(working_dir, "prokkaGEM_mq_cphA.csv"))
+
+summary_hq$quality <- "hq"
+summary_mq$quality <- "mq"
+
+cpha <- rbind(summary_hq, summary_mq)
+
+metadata <- read_csv(file.path(working_dir, "wastewater_mags.csv"))
+
+```
+
+```{r metadata summary}
+
+metadata %>% group_by(ecosystem_type, mimag_quality) %>% summarise(n = n())
+
+```
+

@@ -1,0 +1,104 @@
+---
+title: "Singleton metagenome results"
+output: html_notebook
+---
+
+
+```{r package read in}
+
+library(tidyverse)
+library(readxl)
+library(MetBrewer)
+library(ggplot2)
+library(cowplot)
+library(VennDiagram)
+
+```
+
+```{r functions}
+
+trim_accession <- function(df, column){
+  
+  genome_names <- c()
+  
+  for (i in df[[paste(column)]]){
+    if (str_length(i) > 8){
+      genome_names <- append(genome_names, str_extract(i, "[A-Z]{6}"))
+    } else {
+      genome_names <- append(genome_names, i)
+    }
+  }
+  
+  df[[paste(column)]] <- genome_names
+  
+  return(df)
+
+}
+
+
+```
+
+
+
+
+
+```{r data read in}
+
+working_dir <- file.path("./working/data/Singleton")
+
+summary <- readRDS(file.path(working_dir, "cpha_in_genomes.RDS"))
+
+# split seqnames into NCBI accession and version number
+summary <- summary %>%
+  separate(seqnames, c("genome", "vers"))
+
+metadata <- read.csv(file.path(working_dir, "accessions_sup3.csv"))
+
+metadata[["NCBI_accession_number"]] <- str_trim(metadata[["NCBI_accession_number"]], "right")
+
+
+
+summary <- trim_accession(summary, "genome")
+metadata <- trim_accession(metadata, "NCBI_accession_number")
+
+```
+
+
+Taxonomy trim
+```{r}
+
+taxonomy <- metadata %>% select(NCBI_accession_number, GTDBTax) %>% 
+  filter(NCBI_accession_number %in% summary[["genome"]]) %>% 
+  separate(GTDBTax, c("domain", "phylum", "class", "order", "family", "genus", "species"), ";[a-z]__")
+
+
+
+cpha <- left_join(summary, taxonomy, by = c("genome" = "NCBI_accession_number")) %>%
+  select(-c(vers, transl_table, file))
+
+
+```
+
+Analysis
+```{r}
+cpha %>% group_by(genus) %>% summarise(n=n())
+
+cpha %>% group_by(genus) %>% filter(genus != "") %>% summarise(n=n())
+
+
+
+```
+
+
+Figures
+```{r}
+cpha %>% filter(genus != "") %>%
+ggplot(., aes(x=genus)) +
+  geom_bar(stat="count")
+
+
+
+```
+
+
+

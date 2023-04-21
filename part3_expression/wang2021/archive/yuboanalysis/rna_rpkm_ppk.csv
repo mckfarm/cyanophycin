@@ -1,0 +1,5 @@
+gene_id,gene_name,rpkm_pr_anaerobic,rpkm_pr_anoxic,rpkm_pr_aerobic,rpkm_ac_anaerobic,rpkm_ac_anoxic,rpkm_ac_aerobic
+AccIF,Polyphosphate kinase,100,84,102,125,105,115
+AccIC,Polyphosphate kinase,105,103,81,92,92,71
+AccIA,Polyphosphate kinase,68,45,50,75,45,52
+AccIB,Polyphosphate kinase,5,5,5,8,9,5
