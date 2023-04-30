@@ -1,0 +1,76 @@
+---
+title: "Functional group analysis"
+output: html_notebook
+---
+
+
+```{r, warning=FALSE}
+library(MetBrewer)
+library(patchwork)
+library(ggplot2)
+library(gggenes)
+library(tidyverse)
+```
+
+
+```{r}
+
+genegrouper_path <- file.path("part2_functionalgroups/genegrouper/internal_data")
+
+genegroup_reps <- read.csv(file.path(genegrouper_path, "rtable_region_representatives.csv"), header = TRUE)
+metadata <- read.csv(file.path(genegrouper_path, "rtable_genome_input_metadata.csv"), header = TRUE)
+all_data <- read.csv(file.path("part2_functionalgroups/genegrouper/group_regions.csv"))
+
+
+```
+
+
+
+# Gene maps
+
+```{r, fig.height = 12, fig.width = 8}
+
+dfs <- split(genegroup_reps, f = genegroup_reps[["order"]])
+
+# apply ggplot function and write to list
+gg_list <- lapply(dfs, function(x) {
+  plt_title <- x[["order"]][1]
+  numrow <- nrow(x) 
+  ggplot(x, aes(xmin = cds_start, xmax = cds_end, y = 0, 
+                           forward = (strand+1), fill = refseq_product, label = refseq_gene)) +
+    geom_gene_arrow() + 
+    geom_gene_label() +
+    geom_text(aes(x = cds_end - ((cds_end - cds_start)/2), y = 0, label = refseq_product), angle = 35, vjust = -1.1, hjust = 0, size = 3) + 
+    scale_x_continuous(expand = expansion(mult = c(0 , 0.2))) + 
+    scale_y_continuous(limits = c(-0.01, 0.05), breaks = NULL) + 
+    scale_fill_manual(values = met.brewer("Signac", n = numrow)) + 
+    labs(x = "", y = "", title = paste("Group", plt_title)) + 
+    theme_genes() +
+    theme(legend.position = "none")
+})
+
+wrap_plots(gg_list, ncol = 1)
+
+ggsave(file.path("part2_functionalgroups/results", "gene_map_bygroup.tiff"), height = 10, width = 8, units = "in", dpi = 300)
+
+
+```
+
+
+
+
+
+# Summary stats
+```{r}
+
+matches <- metadata %>% filter(assembly_id %in% unique(all_data[["assembly_id"]]))
+
+non_matches <- metadata %>% filter(! assembly_id %in% unique(all_data[["assembly_id"]]))
+
+non_matches
+
+```
+
+
+
+

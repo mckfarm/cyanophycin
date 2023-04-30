@@ -1,0 +1,71 @@
+assembly_id,genus,species,organism,group
+GCF_002937035,paracoccus,denitrificans,Paracoccus denitrificans,DENIT
+GCF_000332235,geminocystis,herdmanii,Geminocystis herdmanii PCC 6308,CYANO
+GCF_001046875,tetrasphaera,jenkinsii,Tetrasphaera jenkinsii Ben 74,PAO
+GCF_019704535,pseudomonas,stutzeri,Pseudomonas stutzeri,DENIT
+GCF_000310185,thauera,aminoaromatica,Thauera aminoaromatica S2,DENIT
+GCF_000340785,synechocystis,sp.,Synechocystis sp. PCC 6803,CYANO
+GCA_017592745,candidatus,accumulibacter,Candidatus Accumulibacter sp.,PAO
+GCF_009833085,nitrosomonas,oligotropha,Nitrosomonas oligotropha,AOB
+GCF_000009145,nitrosomonas,europaea,Nitrosomonas europaea ATCC 19718,AOB
+GCA_017592785,candidatus,accumulibacter,Candidatus Accumulibacter sp.,PAO
+GCF_000014765,nitrosomonas,eutropha,Nitrosomonas eutropha C91,AOB
+GCF_900110145,nitrosomonas,marina,Nitrosomonas marina,AOB
+GCA_009467855,candidatus,accumulibacter,Candidatus Accumulibacter phosphatis,PAO
+GCF_001455205,nitrosomonas,ureae,Nitrosomonas ureae,AOB
+GCF_000006765,pseudomonas,aeruginosa,Pseudomonas aeruginosa PAO1,OHO
+GCF_001046855,tetrasphaera,japonica,Tetrasphaera japonica T1-X7,PAO
+GCF_001696715,thauera,phenolivorans,Thauera phenolivorans,DENIT
+GCA_017592725,candidatus,accumulibacter,Candidatus Accumulibacter sp.,PAO
+GCF_905221025,candidatus,nitrotoga,Candidatus Nitrotoga fabula,NOB
+GCF_001458735,candidatus,nitrospira,Candidatus Nitrospira nitrosa,NOB
+GCF_900143275,nitrosomonas,cryotolerans,Nitrosomonas cryotolerans ATCC 49181,AOB
+GCF_000024725,nitrosococcus,halophilus,Nitrosococcus halophilus Nc 4,AOB
+GCF_001051235,candidatus,competibacter,Candidatus Competibacter denitrificans Run_A_D11,GAO
+GCF_900089955,candidatus,accumulibacter,Candidatus Accumulibacter aalborgensis,PAO
+GCF_002245655,thauera,propionica,Thauera propionica,DENIT
+GCF_000355765,nitrosospira,lacus,Nitrosospira lacus,AOB
+GCF_900107165,nitrosomonas,halophila,Nitrosomonas halophila,AOB
+GCF_001007935,nitrosomonas,communis,Nitrosomonas communis,AOB
+GCF_900114795,nitrosomonas,nitrosa,Nitrosomonas nitrosa,AOB
+GCF_001551835,dechloromonas,denitrificans,Dechloromonas denitrificans,DENIT
+GCF_005889575,candidatus,accumulibacter,Candidatus Accumulibacter phosphatis,PAO
+GCF_001458775,candidatus,nitrospira,Candidatus Nitrospira nitrificans,NOB
+GCA_016709495,candidatus,dechloromonas,Candidatus Dechloromonas phosphorivorans,PAO
+GCF_900103035,nitrosomonas,mobilis,Nitrosomonas mobilis,AOB
+GCF_000143145,hyphomicrobium,denitrificans,Hyphomicrobium denitrificans ATCC 51888,DENIT
+GCF_004421105,nitrosococcus,wardiae,Nitrosococcus wardiae,AOB
+GCA_016714975,candidatus,dechloromonas,Candidatus Dechloromonas phosphorivorans,PAO
+GCF_009184895,tetrasphaera,sp.,Tetrasphaera sp. F2B08,PAO
+GCF_001050535,tetrasphaera,australiensis,Tetrasphaera australiensis Ben110,PAO
+GCF_000046845,acinetobacter,baylyi,Acinetobacter baylyi ADP1,OHO
+GCF_009469765,dechloromonas,hortensis,Dechloromonas hortensis,DENIT
+GCF_003030465,thauera,aromatica,Thauera aromatica K172,DENIT
+GCF_000204075,trichormus,variabilis,Trichormus variabilis ATCC 29413,CYANO
+GCF_000143085,nitrosococcus,watsonii,Nitrosococcus watsonii C-113,AOB
+GCF_900403705,nitrospira,lenta,Nitrospira lenta,NOB
+GCF_001273775,nitrospira,moscoviensis,Nitrospira moscoviensis,NOB
+GCF_000519045,dechloromonas,agitata,Dechloromonas agitata is5,DENIT
+GCF_900169565,nitrospira,japonica,Nitrospira japonica,NOB
+GCF_002028545,nitrobacter,vulgaris,Nitrobacter vulgaris,NOB
+GCF_003345255,thauera,hydrothermalis,Thauera hydrothermalis,DENIT
+GCF_000455525,candidatus,microthrix,Candidatus Microthrix parvicella RN1,OHO
+GCF_006742785,nitrosomonas,stercoris,Nitrosomonas stercoris,AOB
+GCF_017368815,comamonas,denitrificans,Comamonas denitrificans,DENIT
+GCF_001051995,thauera,humireducens,Thauera humireducens,DENIT
+GCF_000011385,gloeobacter,violaceus,Gloeobacter violaceus PCC 7421,CYANO
+GCA_017592775,candidatus,accumulibacter,Candidatus Accumulibacter sp.,PAO
+GCF_000013885,nitrobacter,hamburgensis,Nitrobacter hamburgensis X14,NOB
+GCF_000619905,nitrosospira,briensis,Nitrosospira briensis C-128,AOB
+GCA_016721185,candidatus,dechloromonas,Candidatus Dechloromonas phosphorivorans,PAO
+GCA_016722705,candidatus,dechloromonas,Candidatus Dechloromonas phosphoritropha,PAO
+GCF_009707485,tetrasphaera,sp.,Tetrasphaera sp. HKS02,PAO
+GCF_000012725,nitrobacter,winogradskyi,Nitrobacter winogradskyi Nb-255,NOB
+GCA_009467885,candidatus,accumulibacter,Candidatus Accumulibacter phosphatis,PAO
+GCF_000443165,thauera,terpenica,Thauera terpenica 58Eu,DENIT
+GCF_001458695,candidatus,nitrospira,Candidatus Nitrospira inopinata,NOB
+GCF_003046585,nitrosomonas,aestuarii,Nitrosomonas aestuarii,AOB
+GCF_000196355,nitrosospira,multiformis,Nitrosospira multiformis ATCC 25196,AOB
+GCF_000621305,thauera,linaloolentis,Thauera linaloolentis 47Lol = DSM 12138,DENIT
+GCF_905220995,nitrospira,defluvii,Nitrospira defluvii,NOB
+GCF_012939995,candidatus,competibacter,Candidatus Competibacter phosphatis,GAO
