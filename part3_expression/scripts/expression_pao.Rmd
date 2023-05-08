@@ -1,0 +1,65 @@
+---
+title: "Expression analysis - plots"
+output: html_notebook
+---
+
+Reading in filtered expression data produced from analysis Rmds earlier to make combined plots
+
+
+
+```{r}
+inpath <- "./part3_expression/results"
+
+tet_filt <- readRDS(file.path(inpath, "tet_filt.RDS"))
+acc_filt <- readRDS(file.path(inpath, "acc_filt.RDS"))
+
+
+pao_all <- bind_rows(tet_filt, acc_filt) %>% 
+  select(-c(COG, timepoint, ftype, length, eff_length, est_counts, sample))
+
+```
+
+
+Data filtering and combining
+```{r}
+
+
+guide_cols <- c("goldenrod1", "lightgreen", "royalblue", "darkorchid3")
+
+guide_cols_tet <- c("goldenrod1", "seagreen3", "royalblue4")
+
+guide_wang_tpm <- guides(fill = guide_legend(title = "Gene", 
+                                             override.aes = list(
+                                                    color = guide_cols,
+                                                    shape = c(15, 15, 15, 15), 
+                                                    size = c(3, 3, 3, 3)),
+                                             nrow = 1))
+
+pao_all %>% filter(bin %in% c("ACC-IA", "ACC-IC", "ACC-IF")) %>%
+  group_by(product_short, bin, carbon, phase) %>% summarise(sum = sum(tpm)) %>%
+  ggplot(data = ., aes(x = product_short, y = log10(sum), fill = product_short)) +
+  facet_wrap(~ bin) + 
+  geom_boxplot(outlier.color = NA, lwd = 0.5) +
+  geom_point(alpha = 0.4) +
+  scale_fill_manual(values = guide_cols) +
+  stat_compare_means(label = "p.signif",
+                  method = "wilcox", ref.group = "cphA", color = "red") + 
+  scale_y_continuous(expand = expansion(mult = c(0.1, 0.2))) + 
+  labs(x = "Gene", y = "Log10 Transcripts per million reads") +
+  theme_bw() + theme(legend.position = "none")
+
+
+pao_all %>% filter(bin %in% c("TET1", "TET2")) %>%
+  ggplot(data = ., aes(x = phase, y = tpm, fill = product_short)) +
+  facet_wrap(~ bin) + 
+  geom_bar(stat = "identity", position = position_dodge()) + 
+  scale_fill_manual(values = guide_cols_tet) +
+  scale_y_continuous(expand = expansion(mult = c(0.1, 0.2))) + 
+  labs(x = "Gene", y = "Log10 Transcripts per million reads") + 
+  theme_bw() + theme(legend.position = "none")
+
+
+```
+
+
+

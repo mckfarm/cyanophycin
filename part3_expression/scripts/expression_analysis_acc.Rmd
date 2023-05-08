@@ -1,0 +1,367 @@
+---
+title: "Transcript parsing"
+output: html_notebook
+---
+
+```{r}
+# package import
+library(tidyverse)
+library(MetBrewer)
+library(ggpubr)
+library(patchwork)
+library(dplyr)
+
+source("./plotting.R")
+
+outpath_figs <- "./part3_expression/results"
+
+```
+
+
+# Read in and cleaning
+Read in all abundance outputs from Kallisto and prokka, then clean and save to a big df
+
+```{r}
+
+path_data <- "./part3_expression/data/wang"
+
+samples <- read.table(file.path(path_data, "sample_list.txt"), header=TRUE)
+
+data_list <- list()
+
+for(i in 1:nrow(samples)) {
+  samples[["path"]][i] <- file.path(path_data, samples[["sample"]][i], "abundance.tsv")
+  tmp <- read.table(samples[["path"]][i], header=TRUE)
+  tmp[["sample"]] <- samples[["sample"]][i]
+  data_list[[i]] <- tmp
+  rm(tmp)
+}
+
+kallisto <- do.call(rbind, data_list)
+
+# refactor
+kallisto <- kallisto %>%
+  dplyr::rename(locus_tag = target_id)
+
+# prokka
+annotations <- read.csv(file.path(path_data, "all_annotations.csv"), header=TRUE)
+annotations <- annotations %>% filter(ftype=="CDS")
+
+# merge
+wang <- left_join(annotations, kallisto, by = "locus_tag") %>%
+  filter(bin != "Acc_IB") %>% # IB was a reference genome from a different study
+  separate(sample, c("phase", "carbon"), "_", remove = FALSE) %>%
+  mutate(carbon = ifelse(carbon == "ac", "Acetate", "Propionate")) %>%
+  mutate(bin = ifelse(bin == "Acc_IA", "ACC-IA", ifelse(bin == "Acc_IC", "ACC-IC", "ACC-IF"))) %>%
+  mutate(sample = factor(sample, 
+         levels = c("ana_ac", "anx_ac", "aer_ac", "ana_pr", "anx_pr", "aer_pr"))) %>%
+  mutate(phase = factor(phase, 
+         levels = c("ana", "anx", "aer")))
+
+# split sample column into phase and carbon source
+
+# manual ppk annotation 
+wang$product[wang$locus_tag == "BLJGAGFF_02569"] <- "Polyphosphate kinase"
+wang$gene[wang$locus_tag == "BLJGAGFF_02569"] <- "ppk"
+
+# clean up
+rm(data_list, samples, kallisto, annotations, path_data, i)
+
+
+```
+
+
+# Analysis
+Filtering a few key functional genes for PAO
+```{r}
+wang_tpm_filt <- wang %>% 
+  filter(product %in% c("Cyanophycin synthetase", "Polyphosphate kinase", 
+                        "Poly(3-hydroxyalkanoate) polymerase subunit PhaC",
+                        "Glucose-1-phosphate adenylyltransferase")) %>% 
+  mutate(product_short = case_when(product == "Cyanophycin synthetase" ~ "cphA",
+                                    product == "Polyphosphate kinase" ~ "ppk",
+                                    product == "Poly(3-hydroxyalkanoate) polymerase subunit PhaC" ~ "phaC",
+                                    product == "Glucose-1-phosphate adenylyltransferase" ~ "glgC"))
+
+
+saveRDS(wang_tpm_filt, file = file.path(outpath_figs, "acc_filt.RDS"))
+  
+```
+
+
+
+## Expression plots
+cphA, ppk, phaC for comparison
+```{r}
+
+guide_cols <- c("goldenrod1", "seagreen3", "royalblue", "royalblue4")
+
+guide_wang_tpm <- guides(fill = guide_legend(title = "Gene", 
+                                             override.aes = list(
+                                                    color = guide_cols,
+                                                    shape = c(15, 15, 15, 15), 
+                                                    size = c(3, 3, 3, 3)),
+                                             nrow = 1))
+
+
+wang_tpm_box <-
+  wang_tpm_filt %>% filter(product_short %in% c("cphA", "glgC", "phaC", "ppk")) %>%
+  group_by(product_short, bin, carbon, phase) %>% summarise(sum = sum(tpm)) %>%
+  ggplot(data = ., aes(x = product_short, y = log10(sum), fill = product_short)) +
+  facet_wrap(~ bin, nrow = 3) + 
+  geom_boxplot(outlier.color = NA, lwd = 0.5) +
+  geom_jitter(alpha = 0.4) +
+  scale_fill_manual(values = guide_cols) +
+  theme_bw() + 
+  stat_compare_means(label = "p.signif",
+                  method = "wilcox", ref.group = "cphA") + 
+  scale_y_continuous(expand = expansion(mult = c(0, 0.2))) + 
+  labs(x = "Gene", y = "Log10 Transcripts per million reads") +
+  guides(fill = "none")
+  
+wang_tpm_grid <-
+wang_tpm_filt %>% filter(product_short %in% c("cphA", "glgC", "phaC", "ppk")) %>%
+  ggplot(data = ., aes(x = phase, y = tpm, fill = product_short)) + 
+  facet_grid( bin ~ carbon, scales = "free") +
+  geom_bar(stat = "identity", position = "dodge", key_glyph = "point") +
+  scale_fill_manual(values = guide_cols, guide = guide_wang_tpm) +
+  theme_bw() + 
+  labs(x = "Reactor Phase", y = "Transcripts per million reads") +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.05))) + 
+  guide_wang_tpm
+
+
+(wang_tpm_grid + wang_tpm_box + 
+    plot_layout(widths = c(1, 0.4), guides = "collect") & 
+    theme(legend.position = "bottom", legend.box.background = element_rect(colour = "black"))) + 
+  plot_annotation(tag_levels = "A")
+  
+ggsave(file.path(outpath_figs, "expression_wang.tiff"), dpi = 300, width = 8, height = 6, units = "in")
+
+## https://stackoverflow.com/questions/64344106/combine-and-merge-legends-in-ggplot2-with-patchwork-discrete-categorical-data
+
+```
+
+```{r}
+wang_tpm_filt %>% filter(product_short %in% c("cphA", "glgC", "phaC", "ppk")) %>%
+  group_by(product_short, bin, carbon, phase) %>% summarise(sum = sum(tpm)) %>%
+  compare_means(product_short ~ sum, data = ., method="wilcox")
+
+
+```
+
+
+cphA only
+```{r}
+
+guide_cpha_grid <- guides(fill = guide_legend(title = "A - Gene", 
+                                             override.aes = list(color = met.brewer("OKeeffe2", 2),
+                                                    shape = c(15, 15), 
+                                                    size = c(3, 3)),
+                                             nrow = 1))
+
+guide_cpha_box <- guides(fill = guide_legend(title = "B - Bin", 
+                                             override.aes = list(color = met.brewer("NewKingdom", 3),
+                                                    shape = c(15, 15, 15), 
+                                                    size = c(3, 3, 3)),
+                                             nrow = 1))
+
+
+wang_cpha_grid <- 
+ggplot(data = wang_tpm_filt %>% filter(product_short == "cphA"),
+         aes(x = phase, y = tpm, fill = gene)) +
+  facet_grid( bin ~ carbon , scales = "free") +
+  geom_bar(stat = "identity", position = "dodge", key_glyph = "point") +
+  scale_fill_manual(values = met.brewer("OKeeffe2", 2)) +
+  theme_bw() +
+  labs(x = "Reactor Phase", y = "Transcripts per million reads")  +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.3))) +
+  guide_cpha_grid
+
+wang_cpha_box <- 
+wang_tpm_filt %>% filter(product_short == "cphA") %>%
+  group_by(bin, carbon, gene, phase) %>% summarise(sum = sum(tpm)) %>%
+  ggplot(data = ., aes(x = bin, y = log10(sum), fill = bin)) +
+  geom_boxplot(outlier.color = NA, lwd = 0.5, key_glyph = "point") +
+  geom_jitter(alpha = 0.4) +
+  scale_fill_manual(values = met.brewer("NewKingdom", 3)) +
+  theme_bw() + 
+  stat_compare_means(label = "p.signif",
+                  method = "wilcox", ref.group = "IA") + 
+  scale_y_continuous(expand = expansion(mult = c(0.1, 0.1))) + 
+  labs(x = "Bin", y = "Log 10 Transcripts per million reads") +
+  guide_cpha_box
+
+layout <- "
+AABB
+AACC
+"
+
+wang_cpha_grid + wang_cpha_box + guide_area() + plot_layout(widths = c(1, 0.4), design = layout, guides = "collect") + 
+  plot_annotation(tag_levels = "A")
+
+ggsave(file.path(outpath_figs, "expression_wang_cpha.tiff"), dpi = 300, width = 8, height = 6, units = "in")
+
+```
+
+
+
+## Summary stats
+```{r message=FALSE}
+wang_tpm_filt %>% 
+  group_by(bin, product_short) %>% summarise(tpm_mean = mean(tpm), tpm_stdev = sd(tpm))
+
+```
+
+
+
+
+# ggGenes plots of Acc bins
+## import
+```{r}
+
+library(rtracklayer)
+library(gggenes)
+
+path_data <- "./part3_expression/data/wang/prokka_gff"
+wang_genomes <- c("Acc_IA", "Acc_IC", "Acc_IF")
+
+data_list <- list()
+
+for(i in wang_genomes) {
+  tmp <- import(file.path(path_data, paste0(i, ".gff")))
+  tmp_df <- data.frame(tmp)
+  tmp_df[["bin"]] <- i
+  data_list[[i]] <- tmp_df
+  rm(tmp, tmp_df)
+}
+
+wang_genomes <- do.call(bind_rows, data_list)
+
+rm(i, path_data)
+
+
+```
+
+Get coordinates of genes identified in the TPM analysis
+```{r}
+
+locus_to_keep <- wang_tpm_filt[["locus_tag"]]
+
+
+wang_genome_filt <- wang_genomes %>% filter(ID %in% locus_to_keep)
+
+wang_genome_filt %>% filter(product == "Cyanophycin synthetase")
+
+```
+
+
+
+
+## gene map - pick which ids to keep (how far away from the gene of interest)
+```{r}
+
+index <- which(wang_genomes[["gene"]] == "cphA_1")
+
+get_ids <- function(index_list, num_positions){
+  data_list <- list()
+  for (i in 1:length(index_list)) {
+    index_range <- (index_list[i] - num_positions) : (index_list[i] + num_positions)
+    data_list[[i]] <- index_range
+  }
+ 
+  flat_data_list <- unlist(data_list)
+  return(flat_data_list)
+}
+
+ids_to_keep <- get_ids(index, 4)
+
+wang_genome_filt <- wang_genomes[ ids_to_keep , ] 
+wang_genome_filt[["strand"]] <- ifelse(wang_genome_filt[["strand"]] == "+", 1, 0)
+
+locus_to_keep <- wang_genome_filt %>% filter(! is.na(gene) ) %>% pull(locus_tag)
+
+
+
+ggplot(wang_genome_filt, aes(xmin = start, xmax = end, y = bin, 
+                             fill = gene, forward = strand, label = gene)) +
+  geom_gene_arrow() +
+  geom_gene_label() + 
+  facet_wrap(~bin, scales = "free", nrow=4) +
+  theme_genes() +
+  scale_fill_manual(values = met.brewer("Cassatt1", 12)) + 
+  theme(legend.position = "none")
+
+```
+
+
+
+```{r}
+
+wang %>% filter(locus_tag %in% locus_to_keep) %>% 
+  select(c(gene, product, bin, length, tpm, sample, phase, carbon)) %>% 
+  group_by(bin, product) %>% summarise(tpm_mean = mean(tpm), tpm_stdev = sd(tpm)) %>%
+  ggplot(., aes(x = product, y = tpm_mean, fill = product)) +
+  facet_wrap(~bin) + 
+  geom_bar(stat = "identity") +
+  theme_bw() +
+  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank()) 
+
+```
+
+
+
+# Archive
+## ANOVA check
+Shouldnt use Anova for variance testing because of residuals vs fitted plot cone shape
+```{r}
+anova <- wang_tpm_filt %>% group_by(carbon, phase, product_short, bin) %>% summarise(sum = sum(tpm))
+
+anova <- aov(sum ~ bin * product_short, data = anova)
+
+# plot(anova)
+
+```
+
+## McDaniel
+
+```{r}
+# Kallisto
+
+path_data <- "./part3_expression/data/mcdaniel"
+
+samples <- read.table(file.path(path_data, "sample_list.txt"), header=TRUE)
+
+data_list <- list()
+
+for(i in 1:nrow(samples)) {
+  samples[["path"]][i] <- file.path(path_data, samples[["sample"]][i], "abundance.tsv")
+  tmp <- read.table(samples[["path"]][i], header=TRUE)
+  tmp[["sample"]] <- samples[["sample"]][i]
+  data_list[[i]] <- tmp
+  rm(tmp)
+}
+
+kallisto <- do.call(rbind, data_list)
+
+# refactor
+kallisto <- kallisto %>%
+  mutate(sample = factor(sample, 
+         levels = c("ana_1045", "ana_1116", "ana_1155", "aer_1240", "aer_1315", "aer_1355", "aer_1455"))) %>%
+  rename(locus_tag = target_id)
+
+# prokka
+annotations <- read.csv(file.path(path_data, "all_annotations.csv"), header=TRUE)
+annotations <- annotations %>% filter(ftype=="CDS")
+
+# merge
+mcdaniel <- left_join(annotations, kallisto, by = "locus_tag")
+
+# clean up
+rm(data_list, samples, kallisto, annotations, path_data, i)
+
+
+```
+
+
+

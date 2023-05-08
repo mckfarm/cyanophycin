@@ -3,6 +3,7 @@ title: "Functional group analysis"
 output: html_notebook
 ---
 
+# Set up and data read in
 
 ```{r, warning=FALSE}
 library(MetBrewer)
@@ -10,49 +11,109 @@ library(patchwork)
 library(ggplot2)
 library(gggenes)
 library(tidyverse)
+
+
+
+# genomes and accessions
+metadata <- read.csv(file.path("part2_functionalgroups", "metadata.csv"), header = TRUE)
+
+# plotting
+
 ```
+
+# cphA 
 
 
 ```{r}
 
-genegrouper_path <- file.path("part2_functionalgroups/genegrouper/internal_data")
+genegrouper_path <- file.path("part2_functionalgroups/genegrouper/cpha")
 
-genegroup_reps <- read.csv(file.path(genegrouper_path, "rtable_region_representatives.csv"), header = TRUE)
-metadata <- read.csv(file.path(genegrouper_path, "rtable_genome_input_metadata.csv"), header = TRUE)
-all_data <- read.csv(file.path("part2_functionalgroups/genegrouper/group_regions.csv"))
+genegroup_reps <- read.csv(file.path(genegrouper_path, "internal_data", "rtable_region_representatives.csv"), header = TRUE)
+all_data <- read.csv(file.path(genegrouper_path, "group_regions.csv"))
+
+```
+
+## Group summary
+Which bacteria is in each group? note that G-1 is every genome that didn't make a clean cluster
+
+Note that only Dechloromonas phosphorivorans had one genome where cphA wasnt detected
+```{r}
+
+all_data %>% mutate(group = group + 1) %>%
+  group_by(group) %>% summarise(num_unique = n_distinct(assembly_id))
+
+metadata <- metadata %>% group_by(organism) %>% 
+  mutate(num_species = n_distinct(assembly_id))
+
+group_summary <- all_data %>% mutate(group = group + 1) %>%
+  group_by(group) %>% reframe(assembly_id = unique(assembly_id)) %>% # get unique assembly ids by group
+  ungroup() %>% left_join(metadata, by = "assembly_id") %>% # join to metadata 
+  group_by(organism) %>% mutate(num_in_grp = n_distinct(assembly_id)) %>% # count number of species in each group
+  mutate(perc_in_grp = num_in_grp / num_species) # get percent in each group
+
+
+group_map <- 
+ggplot(data = group_summary, aes(x = group.x, y = organism)) +
+  geom_tile(color = "black", fill = "thistle") + 
+  scale_y_discrete(limits=rev) +
+  labs(x = "Group", y = "Organism", title = "") + 
+  theme_classic() +
+  theme(axis.line = element_blank(), axis.text=element_text(size=9))
+
+group_map
+
+ggsave(file.path("part2_functionalgroups/results", "group_map.tiff"), 
+       height = 6, width = 5, units = "in", dpi = 300)
 
 
 ```
 
 
 
-# Gene maps
 
-```{r, fig.height = 12, fig.width = 8}
+## Gene maps of cphA clusters
+Mapping gene clusters around cphA from genegrouper - genegrouper makes these plots automatically but I'm doing some customization 
 
-dfs <- split(genegroup_reps, f = genegroup_reps[["order"]])
+```{r, fig.height = 8, fig.width = 8}
+
+dfs <- genegroup_reps %>% filter(dbscan_label != -1) %>% mutate(plt_grp = dbscan_label + 1) %>%
+  group_by(plt_grp) %>% group_split()
 
 # apply ggplot function and write to list
 gg_list <- lapply(dfs, function(x) {
-  plt_title <- x[["order"]][1]
+  plt_title <- x[["plt_grp"]][1]
   numrow <- nrow(x) 
   ggplot(x, aes(xmin = cds_start, xmax = cds_end, y = 0, 
                            forward = (strand+1), fill = refseq_product, label = refseq_gene)) +
     geom_gene_arrow() + 
     geom_gene_label() +
-    geom_text(aes(x = cds_end - ((cds_end - cds_start)/2), y = 0, label = refseq_product), angle = 35, vjust = -1.1, hjust = 0, size = 3) + 
+    geom_text(aes(x = cds_end - ((cds_end - cds_start)/2), 
+                  y = 0, label = refseq_product), angle = 40, vjust = -1.5, hjust = 0, size = 3) + 
     scale_x_continuous(expand = expansion(mult = c(0 , 0.2))) + 
-    scale_y_continuous(limits = c(-0.01, 0.05), breaks = NULL) + 
+    scale_y_continuous(limits = c(-0.01, 0.2), breaks = NULL) + 
     scale_fill_manual(values = met.brewer("Signac", n = numrow)) + 
     labs(x = "", y = "", title = paste("Group", plt_title)) + 
     theme_genes() +
     theme(legend.position = "none")
 })
 
-wrap_plots(gg_list, ncol = 1)
+gene_clusters <- gg_list[[1]] / gg_list[[2]]
 
-ggsave(file.path("part2_functionalgroups/results", "gene_map_bygroup.tiff"), height = 10, width = 8, units = "in", dpi = 300)
+gene_clusters
 
+ggsave(plot = gene_clusters, file.path("part2_functionalgroups/results", "gene_map_bygroup.tiff"),
+       height = 4, width = 8, units = "in", dpi = 300)
+
+
+```
+
+```{r, fig.height = 6, fig.width = 12}
+
+(group_map + labs(tags = "A") | ((gg_list[[1]] + labs(tags = "B")) / gg_list[[2]])) + 
+  theme(plot.margin = margin(0,0,0,0, "cm")) + plot_layout(widths = c(1, 20)) 
+
+ggsave(file.path("part2_functionalgroups/results", "gene_map_combo.tiff"),
+       height = 6, width = 12, units = "in", dpi = 300)
 
 ```
 
@@ -60,17 +121,35 @@ ggsave(file.path("part2_functionalgroups/results", "gene_map_bygroup.tiff"), hei
 
 
 
-# Summary stats
+## Summary stats by functional group
 ```{r}
 
-matches <- metadata %>% filter(assembly_id %in% unique(all_data[["assembly_id"]]))
+matches <- unique(all_data[["assembly_id"]])
+metadata <- metadata %>% mutate(cpha = ifelse(assembly_id %in% matches, TRUE, FALSE)) %>% 
+  filter(!group %in% c("OHO", "CYANO"))
 
-non_matches <- metadata %>% filter(! assembly_id %in% unique(all_data[["assembly_id"]]))
+write.csv(metadata, file.path("part2_functionalgroups/table_S1.csv"), row.names = FALSE)
 
-non_matches
 
 ```
 
+
+
+```{r}
+
+metadata %>% filter(group == "AOB" & genus == "nitrosomonas")
+
+
+```
+
+
+```{r}
+
+group_summary <- metadata %>% 
+  group_by(group) %>% summarise(tot = n(), tot_yes = sum(cpha==TRUE))
+
+group_summary
+```
 
 
 

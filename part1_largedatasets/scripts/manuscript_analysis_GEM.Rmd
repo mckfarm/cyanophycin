@@ -6,21 +6,116 @@ output: html_notebook
 Results and analysis for GEM metagenomes for cyanophycin analysis
 
 
-```{r package read in}
+```{r package read in, warnings = FALSE}
 
 library(tidyverse)
 library(readxl)
 library(MetBrewer)
+library(patchwork)
 library(ggplot2)
-library(cowplot)
-library(VennDiagram)
+
+outpath <- file.path("./part1_largedatasets/results")
 
 ```
 
 
-```{r data read in}
+```{r metadata summary}
 
-working_dir <- file.path("./working/data/GEM")
+working_dir <- file.path("./part1_largedatasets/data/GEM")
+
+cyano_df <- read_excel(file.path(working_dir, "pathway_results.xlsx"), sheet="results", na="N/A")
+metadata <- read_excel(file.path(working_dir, "pathway_results.xlsx"), sheet="wastewater_mags", na="N/A")
+
+
+# taxonomy parsing
+cyano_df <- cyano_df %>% 
+  mutate(taxonomy = str_replace_all(taxonomy, pattern = ";[a-z]__" , replacement = ",")) %>%
+  separate_wider_delim(taxonomy, delim = ",", names = c("domain", "phylum", "class", "order", "family", "genus", "species")) %>%
+  mutate(genus = str_replace(genus, "_[A-Z]", ""))
+
+
+cyano_df[cyano_df == ""] <- "unknown"
+
+```
+
+
+```{r}
+
+cpha_mags <- cyano_df %>% filter(cphA >= 1) %>% 
+  group_by(ecosystem_type) %>% count() %>%
+  mutate(source = "cphA")
+
+cpha_mags$perc <- round(cpha_mags$n / sum(cpha_mags$n) * 100, 0)
+
+all_mags <- metadata %>% 
+  group_by(ecosystem_type) %>% count() %>%
+  mutate(source = "all") 
+
+all_mags$perc <- round(all_mags$n / sum(all_mags$n) * 100, 0)
+
+mags_summary <- bind_rows(cpha_mags, all_mags)
+
+```
+
+
+```{r}
+ggplot(mags_summary, 
+       aes(x = factor(source), y = perc, label = perc, fill = ecosystem_type)) +
+  geom_col(size=0.3) +
+  geom_text(position = position_stack(vjust = 0.5), color = "black", size = 3) + 
+  scale_fill_manual(values = met.brewer("Hokusai3", 4),
+                    labels = c("Activated sludge", "Anaerobic digester", 
+                               "Industrial wastewater", "Nutrient removal"),
+                    name = "MAG source") + 
+  scale_x_discrete(labels = c("all" = "All MAGs", "cphA" = "MAGs with cphA gene")) + 
+  theme_bw() +
+  labs(x = "", y = "Percent [%]")
+
+ggsave(file.path(outpath, "GEM_distribution.tiff"), height = 4, width = 6, units = "in", dpi = 300)
+  
+```
+
+
+Genus level analysis
+```{r, fig.height = 6}
+
+
+bar_fam <-
+cyano_df %>% filter(cphA >= 1) %>%
+  group_by(family) %>% mutate(count_of_fam = n()) %>% filter(count_of_fam > 1) %>% filter(family != "unknown") %>%
+ggplot(., aes(x=reorder(family, -count_of_fam))) +
+  geom_bar(stat = "count", fill = "slateblue") +
+  coord_flip() +
+  theme_bw() +
+  labs(y = "Count", x = "", title = "Family")
+
+
+bar_gen <- 
+cyano_df %>% filter(cphA >= 1) %>%
+  group_by(genus) %>% mutate(count_of_gen = n()) %>% filter(count_of_gen > 1) %>% filter(genus != "unknown") %>%
+ggplot(., aes(x=reorder(genus, -count_of_gen))) +
+  geom_bar(stat = "count", fill = "orange") +
+  coord_flip() +
+  theme_bw() +
+  labs(y = "Count", x = "", title = "Genus")
+
+
+bar_fam / bar_gen
+
+
+ggsave(file.path(outpath, "GEM_taxa_count.tiff"), height = 10, width = 6, units = "in", dpi = 300)
+
+
+
+
+```
+
+
+
+
+
+
+```{r data read in}
 
 summary_hq <- read_csv(file.path(working_dir, "prokkaGEM_hq_cphA.csv"))
 summary_mq <- read_csv(file.path(working_dir, "prokkaGEM_mq_cphA.csv"))
@@ -31,12 +126,6 @@ summary_mq$quality <- "mq"
 cpha <- rbind(summary_hq, summary_mq)
 
 metadata <- read_csv(file.path(working_dir, "wastewater_mags.csv"))
-
-```
-
-```{r metadata summary}
-
-metadata %>% group_by(ecosystem_type, mimag_quality) %>% summarise(n = n())
 
 ```
 

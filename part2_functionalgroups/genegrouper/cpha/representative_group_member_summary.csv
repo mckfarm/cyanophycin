@@ -1,0 +1,14 @@
+gene_position,group_1,group_0,group_-1
+1.0,NA | GA707_RS07800 | ABC transporter ATP-binding protein,NA | NSMM_RS10600 | IS1595 family transposase,NA | SYN6308_RS13940 | PAS domain S-box protein
+2.0,NA | GA707_RS07805 | hypothetical protein,NA | NSMM_RS10605 | ABC transporter ATP-binding protein/permease,NA | SYN6308_RS24920 | hypothetical protein
+3.0,glgA | GA707_RS07810 | glycogen synthase,NA | NSMM_RS10610 | DUF1854 domain-containing protein,NA | SYN6308_RS13950 | hypothetical protein
+4.0,glgC | GA707_RS07815 | glucose-1-phosphate adenylyltransferase,cphA | NSMM_RS10615 | cyanophycin synthetase,trmD | SYN6308_RS13955 | tRNA (guanosine(37)-N1)-methyltransferase TrmD
+5.0,serB | GA707_RS07820 | phosphoserine phosphatase SerB,* cphA | NSMM_RS10620 | cyanophycin synthetase,NA | SYN6308_RS13960 | cyanophycinase
+6.0,NA | GA707_RS07825 | cyanophycinase,NA | NSMM_RS15250 | IS5/IS1182 family transposase,* cphA | SYN6308_RS13965 | cyanophycin synthetase
+7.0,* cphA | GA707_RS07830 | cyanophycin synthetase,,NA | SYN6308_RS13970 | hypothetical protein
+8.0,NA | GA707_RS07835 | tetratricopeptide repeat protein,,NA | SYN6308_RS13975 | D-alanine--D-alanine ligase
+9.0,fabI | GA707_RS07840 | enoyl-ACP reductase FabI,,NA | SYN6308_RS13980 | hypothetical protein
+10.0,NA | GA707_RS07845 | beta-ketoacyl-ACP reductase,,NA | SYN6308_RS22505 | hypothetical protein
+11.0,NA | GA707_RS07850 | DUF3099 domain-containing protein,,NA | SYN6308_RS13990 | DEAD/DEAH box helicase family protein
+12.0,"moaA | GA707_RS07855 | GTP 3',8-cyclase MoaA",,NA | SYN6308_RS13995 | hypothetical protein
+13.0,NA | GA707_RS07860 | SURF1 family protein,,NA | SYN6308_RS14000 | hypothetical protein

@@ -1,0 +1,240 @@
+---
+title: "Transcript parsing"
+output: html_notebook
+---
+
+```{r}
+# package import
+library(tidyverse)
+library(MetBrewer)
+library(gggenes)
+library(ggpubr)
+library(patchwork)
+library(dplyr)
+library(rtracklayer)
+
+source("./plotting.R")
+
+outpath_figs <- "./part3_expression/results"
+
+```
+
+
+# Read in and cleaning
+Read in all abundance outputs from Kallisto and prokka, then clean and save to a big df
+
+```{r}
+
+path_data <- "./part3_expression/data/mcdaniel2"
+
+kallisto <- read.csv(file.path(path_data, "2013_R1R2_raw_table.csv"), sep = ";")
+
+# filter to tetrasphaera bins only
+kallisto <- kallisto %>% filter(Bin %in% c("3300009517-bin.45", "3300026286-bin.22"))
+
+# clean up locus tag column
+kallisto$Locus_Tag <- str_remove(kallisto$Locus_Tag, paste0(kallisto$Bin, "_"))
+
+kallisto <- kallisto %>% select(-c("Bin", "Annotation")) %>% 
+  pivot_longer(!Locus_Tag, names_to = "timepoint", values_to = "tpm")
+
+tet1 <- read.csv(file.path(path_data, "TET1", "3300009517-bin.45.tsv"), sep = "\t")
+tet2 <- read.csv(file.path(path_data, "TET2", "3300026286-bin.22.tsv"), sep = "\t")
+
+
+tet1$bin <- "TET1"
+tet2$bin <- "TET2"
+
+tet_all <- tet1 %>% bind_rows(tet2) %>% filter(ftype == "CDS")
+
+tet_all <- left_join(tet_all, kallisto, by = join_by("locus_tag" == "Locus_Tag"))
+
+rm(tet1, tet2)
+
+
+```
+
+
+# Analysis
+Filtering a few key functional genes for PAO
+```{r}
+
+tet_filt <- tet_all %>% 
+  filter(product %in% c("Cyanophycin synthetase", "Polyphosphate kinase", 
+                        "Poly(3-hydroxyalkanoate) polymerase subunit PhaC",
+                        "Glucose-1-phosphate adenylyltransferase")) %>% 
+  mutate(product_short = case_when(product == "Cyanophycin synthetase" ~ "cphA",
+                                    product == "Polyphosphate kinase" ~ "ppk",
+                                    product == "Poly(3-hydroxyalkanoate) polymerase subunit PhaC" ~ "phaC",
+                                    product == "Glucose-1-phosphate adenylyltransferase" ~ "glgC")) %>%
+  mutate(phase = case_when(timepoint == "B_15min_Anaerobic" ~ "Ana - 11 min",
+                               timepoint == "D_52min_Anaerobic" ~ "Ana - 52 min",
+                               timepoint == "F_92min_Anaerobic" ~ "Ana - 93 min",
+                               timepoint == "H_11min_Aerobic" ~ "Aer - 11 min", 
+                               timepoint == "J_51min_Aerobic" ~ "Aer - 51 min",
+                               timepoint == "N_134min_Aerobic" ~ "Aer - 134 min")) 
+
+tet_filt$phase <- factor(tet_filt$phase, 
+                             levels = c("Ana - 11 min", "Ana - 52 min", "Ana - 93 min", 
+                                        "Aer - 11 min", "Aer - 51 min", "Aer - 134 min"))
+
+saveRDS(tet_filt, file = file.path(outpath_figs, "tet_filt.RDS"))
+  
+```
+
+
+
+## Expression plots
+cphA, ppk, phaC for comparison
+```{r}
+
+guide_cols <- c("goldenrod1", "seagreen3", "royalblue4")
+
+guide_tpm <- guides(fill = guide_legend(title = "Gene", 
+                                             override.aes = list(
+                                                    color = guide_cols,
+                                                    shape = c(15, 15, 15), 
+                                                    size = c(3, 3, 3)),
+                                             ))
+
+tet_box <- 
+tet_filt %>% filter(product_short %in% c("cphA", "glgC", "phaC", "ppk")) %>%
+  group_by(product_short, bin, phase) %>% summarise(sum = sum(tpm)) %>%
+  ggplot(data = ., aes(x = product_short, y = log10(sum), fill = product_short)) +
+  facet_wrap(~ bin, nrow = 3) + 
+  geom_boxplot(outlier.color = NA, lwd = 0.5, key_glyph = "point") +
+  geom_jitter(alpha = 0.4) +
+  scale_fill_manual(values = guide_cols) +
+  stat_compare_means(label = "p.signif",
+                  method = "wilcox", ref.group = "cphA") + 
+  scale_y_continuous(expand = expansion(mult = c(0.2, 0.2))) + 
+  labs(x = "Gene", y = "Log10 Transcripts per million reads") +
+  theme_bw() + guides(fill = "none")
+  
+tet_time <-
+tet_filt %>% filter(product_short %in% c("cphA", "glgC", "phaC", "ppk")) %>%
+  ggplot(data = ., aes(x = phase, y = tpm, fill = product_short)) + 
+  facet_grid(~bin, scales = "free") +
+  geom_bar(stat = "identity", position = "dodge", key_glyph = "point") +
+  scale_fill_manual(values = guide_cols) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.05))) +
+  labs(x = "Reactor Phase", y = "Transcripts per million reads") +
+  theme_bw() + 
+  theme(legend.position = c(0.15, 0.8), 
+    axis.text.x = element_text(angle = 30, hjust = 0.9), 
+    legend.box.background = element_rect(colour = "black")) +
+  guide_tpm 
+
+
+(tet_time + tet_box + plot_layout(widths = c(1, 0.4))) + 
+  plot_annotation(tag_levels = "A")
+  
+ggsave(file.path(outpath_figs, "expression_tet.tiff"), dpi = 300, width = 8, height = 4.5, units = "in")
+
+## https://stackoverflow.com/questions/64344106/combine-and-merge-legends-in-ggplot2-with-patchwork-discrete-categorical-data
+
+```
+
+
+# Gene maps
+
+```{r}
+
+tet1 <- import(file.path(path_data, "TET1/3300009517-bin.45.gff"))
+tet2 <- import(file.path(path_data, "TET2/3300026286-bin.22.gff"))
+
+
+
+tet1 <- as.data.frame(tet1) %>% filter(type == "CDS") %>% 
+  mutate(strand = case_when(strand == "+" ~ 1, 
+                            strand == "-" ~ 0))
+inds <- which(tet1$product == "Cyanophycin synthetase")
+rows <- lapply(inds, function(x) (x-5):(x+5))
+tet1_mapping <- tet1[unlist(rows),]
+
+tet2 <- as.data.frame(tet2) %>% filter(type == "CDS") %>% 
+  mutate(strand = case_when(strand == "+" ~ 1, 
+                            strand == "-" ~ 0))
+inds <- which(tet2$product == "Cyanophycin synthetase")
+rows <- lapply(inds, function(x) (x-5):(x+5))
+tet2_mapping <- tet2[unlist(rows),]
+
+
+tet1_mapping$bin <- "TET1"
+tet2_mapping$bin <- "TET2"
+
+tet_mapping <- tet1_mapping %>% bind_rows(tet2_mapping)
+
+tet_tpm <- left_join(tet_mapping, kallisto, by = join_by("locus_tag" == "Locus_Tag"))
+
+tet_tpm <- tet_tpm %>%
+  mutate(phase = case_when(timepoint == "B_15min_Anaerobic" ~ "Ana - 11 min",
+                               timepoint == "D_52min_Anaerobic" ~ "Ana - 52 min",
+                               timepoint == "F_92min_Anaerobic" ~ "Ana - 93 min",
+                               timepoint == "H_11min_Aerobic" ~ "Aer - 11 min", 
+                               timepoint == "J_51min_Aerobic" ~ "Aer - 51 min",
+                               timepoint == "N_134min_Aerobic" ~ "Aer - 134 min")) 
+
+tet_tpm$phase <- factor(tet_tpm$phase, 
+                             levels = c("Ana - 11 min", "Ana - 52 min", "Ana - 93 min", 
+                                        "Aer - 11 min", "Aer - 51 min", "Aer - 134 min"))
+
+products <- unique(tet2$gene)
+
+("phaC" %in% products)
+
+# rm(tet1, tet2)
+  
+```
+
+```{r}
+
+tet_tpm %>% filter(product == "Cyanophycin synthetase") %>%
+  ggplot(data = ., aes(x = phase, y = tpm, fill = gene)) + 
+  facet_wrap(~bin) + 
+  geom_bar(stat = "identity", position = "dodge") + 
+  scale_fill_manual(values = met.brewer("OKeeffe2", 2), name = "Gene") +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.05))) +
+  labs(x = "Reactor Phase", y = "Transcripts per million reads") +
+  theme_bw() +
+  theme(legend.position = c(0.1, 0.8), 
+    axis.text.x = element_text(angle = 30, hjust = 0.9), 
+    legend.box.background = element_rect(colour = "black"))
+
+ggsave(file.path(outpath_figs, "expression_tet_cpha.tiff"), dpi = 300, width = 6, height = 4, units = "in")
+
+
+```
+
+
+
+
+Gene maps
+```{r, fig.height = 8, fig.width = 6}
+
+tet_dfs <- list(tet1_mapping, tet2_mapping)
+
+
+gg_list <- lapply(tet_dfs, function(x) {
+  plt_title <- x[["plt_grp"]][1]
+  numrow <- nrow(x) 
+  ggplot(x, aes(xmin = start, xmax = end, y = bin, fill = product, label = product, forward = strand)) +
+  geom_gene_arrow() + 
+  geom_text(aes(x = end - ((end - start)/2), y = bin, label = product), angle = 40, vjust = -1.5, hjust = 0, size = 3) + 
+  scale_x_continuous(expand = expansion(mult = c(0 , 0.25))) + 
+  scale_y_discrete(expand = expansion(mult = c(0.01, 0.05))) + 
+  scale_fill_manual(values = met.brewer("Signac", n = numrow)) + 
+  theme_genes() +
+  theme(legend.position = "none") + 
+  labs(x = "", y = "") +
+  theme(plot.margin = unit(c(0,0,0,0), "cm"))
+})
+
+
+wrap_plots(gg_list, nrow = 2)
+
+ggsave(file.path(outpath_figs, "tet_gene_map.tiff"), dpi = 300, width = 6, height = 8, units = "in")
+
+```
+
+

@@ -1,6 +1,7 @@
 assembly_id,genus,species,organism,group
 GCF_002937035,paracoccus,denitrificans,Paracoccus denitrificans,DENIT
 GCF_000332235,geminocystis,herdmanii,Geminocystis herdmanii PCC 6308,CYANO
+GCF_000531125,candidatus,contendobacter,Candidatus Contendobacter odensis Run_B_J11,GAO
 GCF_001046875,tetrasphaera,jenkinsii,Tetrasphaera jenkinsii Ben 74,PAO
 GCF_019704535,pseudomonas,stutzeri,Pseudomonas stutzeri,DENIT
 GCF_000310185,thauera,aminoaromatica,Thauera aminoaromatica S2,DENIT
@@ -32,6 +33,7 @@ GCF_001551835,dechloromonas,denitrificans,Dechloromonas denitrificans,DENIT
 GCF_005889575,candidatus,accumulibacter,Candidatus Accumulibacter phosphatis,PAO
 GCF_001458775,candidatus,nitrospira,Candidatus Nitrospira nitrificans,NOB
 GCA_016709495,candidatus,dechloromonas,Candidatus Dechloromonas phosphorivorans,PAO
+GCA_900089945,candidatus,propionivibrio,Candidatus Propionivibrio aalborgensis,GAO
 GCF_900103035,nitrosomonas,mobilis,Nitrosomonas mobilis,AOB
 GCF_000143145,hyphomicrobium,denitrificans,Hyphomicrobium denitrificans ATCC 51888,DENIT
 GCF_004421105,nitrosococcus,wardiae,Nitrosococcus wardiae,AOB
@@ -52,9 +54,12 @@ GCF_003345255,thauera,hydrothermalis,Thauera hydrothermalis,DENIT
 GCF_000455525,candidatus,microthrix,Candidatus Microthrix parvicella RN1,OHO
 GCF_006742785,nitrosomonas,stercoris,Nitrosomonas stercoris,AOB
 GCF_017368815,comamonas,denitrificans,Comamonas denitrificans,DENIT
+GCF_014672695,defluviicoccus,vanus,Defluviicoccus vanus,GAO
 GCF_001051995,thauera,humireducens,Thauera humireducens,DENIT
 GCF_000011385,gloeobacter,violaceus,Gloeobacter violaceus PCC 7421,CYANO
 GCA_017592775,candidatus,accumulibacter,Candidatus Accumulibacter sp.,PAO
+GCA_013414705,defluviicoccus,sp.,Defluviicoccus sp.,GAO
+GCA_016709335,candidatus,propionivibrio,Candidatus Propionivibrio dominans,GAO
 GCF_000013885,nitrobacter,hamburgensis,Nitrobacter hamburgensis X14,NOB
 GCF_000619905,nitrosospira,briensis,Nitrosospira briensis C-128,AOB
 GCA_016721185,candidatus,dechloromonas,Candidatus Dechloromonas phosphorivorans,PAO

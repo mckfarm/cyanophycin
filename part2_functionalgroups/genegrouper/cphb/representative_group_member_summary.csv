@@ -1,0 +1,11 @@
+gene_position,group_0,group_-1
+1.0,NA | GA707_RS07795 | NfeD family protein,NA | SYN6308_RS13940 | PAS domain S-box protein
+2.0,NA | GA707_RS07800 | ABC transporter ATP-binding protein,NA | SYN6308_RS24920 | hypothetical protein
+3.0,NA | GA707_RS07805 | hypothetical protein,NA | SYN6308_RS13950 | hypothetical protein
+4.0,glgA | GA707_RS07810 | glycogen synthase,trmD | SYN6308_RS13955 | tRNA (guanosine(37)-N1)-methyltransferase TrmD
+5.0,glgC | GA707_RS07815 | glucose-1-phosphate adenylyltransferase,* NA | SYN6308_RS13960 | cyanophycinase
+6.0,serB | GA707_RS07820 | phosphoserine phosphatase SerB,cphA | SYN6308_RS13965 | cyanophycin synthetase
+7.0,* NA | GA707_RS07825 | cyanophycinase,NA | SYN6308_RS13970 | hypothetical protein
+8.0,cphA | GA707_RS07830 | cyanophycin synthetase,NA | SYN6308_RS13975 | D-alanine--D-alanine ligase
+9.0,NA | GA707_RS07835 | tetratricopeptide repeat protein,NA | SYN6308_RS13980 | hypothetical protein
+10.0,fabI | GA707_RS07840 | enoyl-ACP reductase FabI,NA | SYN6308_RS22505 | hypothetical protein

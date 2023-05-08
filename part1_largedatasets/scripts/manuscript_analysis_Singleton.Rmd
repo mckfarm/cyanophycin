@@ -4,14 +4,13 @@ output: html_notebook
 ---
 
 
-```{r package read in}
+```{r package read in, warnings = FALSE}
 
 library(tidyverse)
 library(readxl)
 library(MetBrewer)
 library(ggplot2)
-library(cowplot)
-library(VennDiagram)
+library(patchwork)
 
 ```
 
@@ -44,7 +43,25 @@ trim_accession <- function(df, column){
 
 ```{r data read in}
 
-working_dir <- file.path("./working/data/Singleton")
+working_dir <- file.path("./part1_largedatasets/data/Singleton")
+
+# metadata
+
+
+metadata <- read.csv(file.path(working_dir, "accessions_sup3.csv"))
+metadata[["NCBI_accession_number"]] <- str_trim(metadata[["NCBI_accession_number"]], "right")
+metadata <- trim_accession(metadata, "NCBI_accession_number")
+
+
+# taxonomy 
+taxonomy <- metadata %>% select(NCBI_accession_number, GTDBTax) %>% 
+  separate(GTDBTax, c("domain", "phylum", "class", "order", "family", "genus", "species"), ";[a-z]__")
+
+taxonomy[taxonomy == ""] <- "unknown"
+
+
+
+# cphA
 
 summary <- readRDS(file.path(working_dir, "cpha_in_genomes.RDS"))
 
@@ -52,51 +69,65 @@ summary <- readRDS(file.path(working_dir, "cpha_in_genomes.RDS"))
 summary <- summary %>%
   separate(seqnames, c("genome", "vers"))
 
-metadata <- read.csv(file.path(working_dir, "accessions_sup3.csv"))
-
-metadata[["NCBI_accession_number"]] <- str_trim(metadata[["NCBI_accession_number"]], "right")
-
-
 
 summary <- trim_accession(summary, "genome")
-metadata <- trim_accession(metadata, "NCBI_accession_number")
-
-```
-
-
-Taxonomy trim
-```{r}
-
-taxonomy <- metadata %>% select(NCBI_accession_number, GTDBTax) %>% 
-  filter(NCBI_accession_number %in% summary[["genome"]]) %>% 
-  separate(GTDBTax, c("domain", "phylum", "class", "order", "family", "genus", "species"), ";[a-z]__")
-
-
 
 cpha <- left_join(summary, taxonomy, by = c("genome" = "NCBI_accession_number")) %>%
   select(-c(vers, transl_table, file))
 
 
+
+summary_ppk <- readRDS(file.path(working_dir, "ppk_in_genomes.RDS"))
+summary_ppk <- summary_ppk %>%
+  separate(seqnames, c("genome", "vers"))
+
+
+summary_ppk <- trim_accession(summary_ppk, "genome")
+
+ppk <- left_join(summary_ppk, taxonomy, by = c("genome" = "NCBI_accession_number")) %>%
+  select(-c(vers, transl_table, file))
+
 ```
+
+
+
+
+
 
 Analysis
 ```{r}
-cpha %>% group_by(genus) %>% summarise(n=n())
+cpha %>% summarise(n=n())
 
 cpha %>% group_by(genus) %>% filter(genus != "") %>% summarise(n=n())
-
 
 
 ```
 
 
 Figures
-```{r}
-cpha %>% filter(genus != "") %>%
-ggplot(., aes(x=genus)) +
-  geom_bar(stat="count")
+```{r, fig.height = 10}
+bar_fam <-
+cpha %>%
+  group_by(family) %>% mutate(count_of_fam = n()) %>% filter(count_of_fam > 1) %>% filter(family != "unknown") %>%
+ggplot(., aes(x=reorder(family, -count_of_fam))) +
+  geom_bar(stat = "count", fill = "slateblue") +
+  coord_flip() +
+  theme_bw() +
+  labs(y = "Count", x = "", title = "Family")
+
+bar_gen <- 
+cpha %>% 
+  group_by(genus) %>% mutate(count_of_gen = n()) %>% filter(count_of_gen > 1) %>% filter(genus != "unknown") %>%
+ggplot(., aes(x=reorder(genus, -count_of_gen))) +
+  geom_bar(stat = "count", fill = "orange") +
+  coord_flip() +
+  theme_bw() +
+  labs(y = "Count", x = "", title = "Genus")
 
 
+bar_fam / bar_gen
+
+ggsave(file.path(outpath, "Singleton_taxa_count.tiff"), height = 10, width = 6, units = "in", dpi = 300)
 
 ```
 
