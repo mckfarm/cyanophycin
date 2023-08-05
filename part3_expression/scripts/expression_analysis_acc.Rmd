@@ -9,7 +9,7 @@ library(tidyverse)
 library(MetBrewer)
 library(ggpubr)
 library(patchwork)
-library(dplyr)
+library(ggtext)
 
 source("./plotting.R")
 
@@ -79,7 +79,7 @@ wang_tpm_filt <- wang %>%
                         "Poly(3-hydroxyalkanoate) polymerase subunit PhaC",
                         "Glucose-1-phosphate adenylyltransferase")) %>% 
   mutate(product_short = case_when(product == "Cyanophycin synthetase" ~ "cphA",
-                                    product == "Polyphosphate kinase" ~ "ppk",
+                                    product == "Polyphosphate kinase" ~ "ppk1",
                                     product == "Poly(3-hydroxyalkanoate) polymerase subunit PhaC" ~ "phaC",
                                     product == "Glucose-1-phosphate adenylyltransferase" ~ "glgC"))
 
@@ -96,7 +96,7 @@ cphA, ppk, phaC for comparison
 
 guide_cols <- c("goldenrod1", "seagreen3", "royalblue", "royalblue4")
 
-guide_wang_tpm <- guides(fill = guide_legend(title = "Gene", 
+guide_wang_tpm <- guides(fill = guide_legend(title = "", 
                                              override.aes = list(
                                                     color = guide_cols,
                                                     shape = c(15, 15, 15, 15), 
@@ -105,7 +105,7 @@ guide_wang_tpm <- guides(fill = guide_legend(title = "Gene",
 
 
 wang_tpm_box <-
-  wang_tpm_filt %>% filter(product_short %in% c("cphA", "glgC", "phaC", "ppk")) %>%
+  wang_tpm_filt %>% filter(product_short %in% c("cphA", "glgC", "phaC", "ppk1")) %>%
   group_by(product_short, bin, carbon, phase) %>% summarise(sum = sum(tpm)) %>%
   ggplot(data = ., aes(x = product_short, y = log10(sum), fill = product_short)) +
   facet_wrap(~ bin, nrow = 3) + 
@@ -117,18 +117,21 @@ wang_tpm_box <-
                   method = "wilcox", ref.group = "cphA") + 
   scale_y_continuous(expand = expansion(mult = c(0, 0.2))) + 
   labs(x = "Gene", y = "Log10 Transcripts per million reads") +
-  guides(fill = "none")
+  guides(fill = "none") +
+  theme(axis.text.x = element_text(face = "italic"))
   
 wang_tpm_grid <-
-wang_tpm_filt %>% filter(product_short %in% c("cphA", "glgC", "phaC", "ppk")) %>%
+wang_tpm_filt %>% filter(product_short %in% c("cphA", "glgC", "phaC", "ppk1")) %>%
   ggplot(data = ., aes(x = phase, y = tpm, fill = product_short)) + 
   facet_grid( bin ~ carbon, scales = "free") +
   geom_bar(stat = "identity", position = "dodge", key_glyph = "point") +
-  scale_fill_manual(values = guide_cols, guide = guide_wang_tpm) +
+  scale_fill_manual(name = "", values = guide_cols, guide = guide_wang_tpm, 
+                    labels = c("*cphA*", "*glgC*", "*phaC*", "*ppk1*")) +
   theme_bw() + 
   labs(x = "Reactor Phase", y = "Transcripts per million reads") +
   scale_y_continuous(expand = expansion(mult = c(0, 0.05))) + 
-  guide_wang_tpm
+  guide_wang_tpm +
+  theme(legend.text = element_markdown())
 
 
 (wang_tpm_grid + wang_tpm_box + 
@@ -143,7 +146,7 @@ ggsave(file.path(outpath_figs, "expression_wang.tiff"), dpi = 300, width = 8, he
 ```
 
 ```{r}
-wang_tpm_filt %>% filter(product_short %in% c("cphA", "glgC", "phaC", "ppk")) %>%
+wang_tpm_filt %>% filter(product_short %in% c("cphA", "glgC", "phaC", "ppk1")) %>%
   group_by(product_short, bin, carbon, phase) %>% summarise(sum = sum(tpm)) %>%
   compare_means(product_short ~ sum, data = ., method="wilcox")
 
@@ -176,7 +179,8 @@ ggplot(data = wang_tpm_filt %>% filter(product_short == "cphA"),
   theme_bw() +
   labs(x = "Reactor Phase", y = "Transcripts per million reads")  +
   scale_y_continuous(expand = expansion(mult = c(0, 0.3))) +
-  guide_cpha_grid
+  guide_cpha_grid +
+  theme(legend.text = element_text(face = "italic"))
 
 wang_cpha_box <- 
 wang_tpm_filt %>% filter(product_short == "cphA") %>%

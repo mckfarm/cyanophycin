@@ -8,10 +8,8 @@ output: html_notebook
 ```{r, warning=FALSE}
 library(MetBrewer)
 library(patchwork)
-library(ggplot2)
 library(gggenes)
 library(tidyverse)
-
 
 
 # genomes and accessions
@@ -52,8 +50,21 @@ group_summary <- all_data %>% mutate(group = group + 1) %>%
   mutate(perc_in_grp = num_in_grp / num_species) # get percent in each group
 
 
-group_map <- 
+group_map_full <- 
 ggplot(data = group_summary, aes(x = group.x, y = organism)) +
+  geom_tile(color = "black", fill = "thistle") + 
+  scale_y_discrete(limits=rev) +
+  labs(x = "Group", y = "Organism", title = "") + 
+  theme_classic() +
+  theme(axis.line = element_blank(), axis.text=element_text(size=9))
+
+ggsave(file.path("part2_functionalgroups/results", "group_map_full.tiff"), 
+       height = 6, width = 5, units = "in", dpi = 300)
+
+group_map <- 
+  group_summary %>% filter(group.x != 0 ) %>%
+  mutate(group.x = as.factor(group.x)) %>%
+  ggplot(data = ., aes(x = group.x, y = organism)) +
   geom_tile(color = "black", fill = "thistle") + 
   scale_y_discrete(limits=rev) +
   labs(x = "Group", y = "Organism", title = "") + 
@@ -76,7 +87,9 @@ Mapping gene clusters around cphA from genegrouper - genegrouper makes these plo
 
 ```{r, fig.height = 8, fig.width = 8}
 
-dfs <- genegroup_reps %>% filter(dbscan_label != -1) %>% mutate(plt_grp = dbscan_label + 1) %>%
+dfs <- genegroup_reps %>% filter(dbscan_label != -1) %>% 
+  mutate(plt_grp = dbscan_label + 1) %>%
+  mutate(refseq_gene = ifelse(refseq_product == "cyanophycinase", "cphB", refseq_gene)) %>%
   group_by(plt_grp) %>% group_split()
 
 # apply ggplot function and write to list
@@ -113,7 +126,7 @@ ggsave(plot = gene_clusters, file.path("part2_functionalgroups/results", "gene_m
   theme(plot.margin = margin(0,0,0,0, "cm")) + plot_layout(widths = c(1, 20)) 
 
 ggsave(file.path("part2_functionalgroups/results", "gene_map_combo.tiff"),
-       height = 6, width = 12, units = "in", dpi = 300)
+       height = 5, width = 12, units = "in", dpi = 300)
 
 ```
 

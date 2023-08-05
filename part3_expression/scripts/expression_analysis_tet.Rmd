@@ -10,7 +10,6 @@ library(MetBrewer)
 library(gggenes)
 library(ggpubr)
 library(patchwork)
-library(dplyr)
 library(rtracklayer)
 
 source("./plotting.R")
@@ -62,11 +61,13 @@ Filtering a few key functional genes for PAO
 tet_filt <- tet_all %>% 
   filter(product %in% c("Cyanophycin synthetase", "Polyphosphate kinase", 
                         "Poly(3-hydroxyalkanoate) polymerase subunit PhaC",
-                        "Glucose-1-phosphate adenylyltransferase")) %>% 
+                        "Glucose-1-phosphate adenylyltransferase",
+                        "Cyanophycinase")) %>% 
   mutate(product_short = case_when(product == "Cyanophycin synthetase" ~ "cphA",
-                                    product == "Polyphosphate kinase" ~ "ppk",
+                                    product == "Polyphosphate kinase" ~ "ppk1",
                                     product == "Poly(3-hydroxyalkanoate) polymerase subunit PhaC" ~ "phaC",
-                                    product == "Glucose-1-phosphate adenylyltransferase" ~ "glgC")) %>%
+                                    product == "Glucose-1-phosphate adenylyltransferase" ~ "glgC",
+                                   product == "Cyanophycinase" ~ "cphB")) %>%
   mutate(phase = case_when(timepoint == "B_15min_Anaerobic" ~ "Ana - 11 min",
                                timepoint == "D_52min_Anaerobic" ~ "Ana - 52 min",
                                timepoint == "F_92min_Anaerobic" ~ "Ana - 93 min",
@@ -90,7 +91,7 @@ cphA, ppk, phaC for comparison
 
 guide_cols <- c("goldenrod1", "seagreen3", "royalblue4")
 
-guide_tpm <- guides(fill = guide_legend(title = "Gene", 
+guide_tpm <- guides(fill = guide_legend(title = NULL,
                                              override.aes = list(
                                                     color = guide_cols,
                                                     shape = c(15, 15, 15), 
@@ -98,7 +99,7 @@ guide_tpm <- guides(fill = guide_legend(title = "Gene",
                                              ))
 
 tet_box <- 
-tet_filt %>% filter(product_short %in% c("cphA", "glgC", "phaC", "ppk")) %>%
+tet_filt %>% filter(product_short %in% c("cphA", "glgC", "ppk1")) %>%
   group_by(product_short, bin, phase) %>% summarise(sum = sum(tpm)) %>%
   ggplot(data = ., aes(x = product_short, y = log10(sum), fill = product_short)) +
   facet_wrap(~ bin, nrow = 3) + 
@@ -109,31 +110,87 @@ tet_filt %>% filter(product_short %in% c("cphA", "glgC", "phaC", "ppk")) %>%
                   method = "wilcox", ref.group = "cphA") + 
   scale_y_continuous(expand = expansion(mult = c(0.2, 0.2))) + 
   labs(x = "Gene", y = "Log10 Transcripts per million reads") +
-  theme_bw() + guides(fill = "none")
+  theme_bw() + guides(fill = "none") + 
+  theme(axis.text.x = element_text(face = "italic"))
   
 tet_time <-
-tet_filt %>% filter(product_short %in% c("cphA", "glgC", "phaC", "ppk")) %>%
+tet_filt %>% filter(product_short %in% c("cphA", "glgC", "ppk1")) %>%
   ggplot(data = ., aes(x = phase, y = tpm, fill = product_short)) + 
   facet_grid(~bin, scales = "free") +
   geom_bar(stat = "identity", position = "dodge", key_glyph = "point") +
-  scale_fill_manual(values = guide_cols) +
+  scale_fill_manual(name = NULL, values = guide_cols,
+                    labels = c("*cphA*", "*glgC*", "*ppk1*")) +
   scale_y_continuous(expand = expansion(mult = c(0, 0.05))) +
   labs(x = "Reactor Phase", y = "Transcripts per million reads") +
   theme_bw() + 
   theme(legend.position = c(0.15, 0.8), 
     axis.text.x = element_text(angle = 30, hjust = 0.9), 
     legend.box.background = element_rect(colour = "black")) +
-  guide_tpm 
+  guide_tpm +
+  theme(legend.text = element_markdown())
 
 
 (tet_time + tet_box + plot_layout(widths = c(1, 0.4))) + 
   plot_annotation(tag_levels = "A")
   
-ggsave(file.path(outpath_figs, "expression_tet.tiff"), dpi = 300, width = 8, height = 4.5, units = "in")
+ggsave(file.path(outpath_figs, "expression_tet.tiff"), dpi = 300, width = 8, height = 4, units = "in")
 
 ## https://stackoverflow.com/questions/64344106/combine-and-merge-legends-in-ggplot2-with-patchwork-discrete-categorical-data
 
 ```
+
+
+
+
+```{r}
+
+guide_cols <- c("royalblue4", "violetred")
+
+guide_tpm <- guides(fill = guide_legend(title = NULL,
+                                             override.aes = list(
+                                                    color = guide_cols,
+                                                    shape = c(15, 15), 
+                                                    size = c(3, 3)),
+                                             ))
+
+tet_box <- 
+tet_filt %>% filter(product_short %in% c("cphA", "cphB")) %>%
+  group_by(product_short, bin, phase) %>% summarise(sum = sum(tpm)) %>%
+  ggplot(data = ., aes(x = product_short, y = log10(sum), fill = product_short)) +
+  facet_wrap(~ bin, nrow = 3) + 
+  geom_boxplot(outlier.color = NA, lwd = 0.5, key_glyph = "point") +
+  geom_jitter(alpha = 0.4) +
+  scale_fill_manual(values = guide_cols) +
+  stat_compare_means(label = "p.signif",
+                  method = "wilcox", ref.group = "cphA") + 
+  scale_y_continuous(expand = expansion(mult = c(0.2, 0.2))) + 
+  labs(x = "Gene", y = "Log10 Transcripts per million reads") +
+  theme_bw() + guides(fill = "none") + 
+  theme(axis.text.x = element_text(face = "italic"))
+  
+tet_time <-
+tet_filt %>% filter(product_short %in% c("cphA", "cphB")) %>%
+  ggplot(data = ., aes(x = phase, y = tpm, fill = product_short)) + 
+  facet_grid(~bin, scales = "free") +
+  geom_bar(stat = "identity", position = "dodge", key_glyph = "point") +
+  scale_fill_manual(name = NULL, values = guide_cols,
+                    labels = c("*cphA*", "*cphB*")) +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.05))) +
+  labs(x = "Reactor Phase", y = "Transcripts per million reads") +
+  theme_bw() + 
+  theme(legend.position = c(0.15, 0.8), 
+    axis.text.x = element_text(angle = 30, hjust = 0.9), 
+    legend.box.background = element_rect(colour = "black")) +
+  guide_tpm +
+  theme(legend.text = element_markdown())
+
+
+(tet_time + tet_box + plot_layout(widths = c(1, 0.4))) + 
+  plot_annotation(tag_levels = "A")
+  
+ggsave(file.path(outpath_figs, "expression_tet_cyano.tiff"), dpi = 300, width = 8, height = 4, units = "in")
+```
+
 
 
 # Gene maps
@@ -193,15 +250,16 @@ tet_tpm %>% filter(product == "Cyanophycin synthetase") %>%
   ggplot(data = ., aes(x = phase, y = tpm, fill = gene)) + 
   facet_wrap(~bin) + 
   geom_bar(stat = "identity", position = "dodge") + 
-  scale_fill_manual(values = met.brewer("OKeeffe2", 2), name = "Gene") +
+  scale_fill_manual(values = met.brewer("OKeeffe2", 2), name = NULL) +
   scale_y_continuous(expand = expansion(mult = c(0, 0.05))) +
   labs(x = "Reactor Phase", y = "Transcripts per million reads") +
   theme_bw() +
   theme(legend.position = c(0.1, 0.8), 
     axis.text.x = element_text(angle = 30, hjust = 0.9), 
-    legend.box.background = element_rect(colour = "black"))
+    legend.box.background = element_rect(colour = "black"),
+    legend.text = element_text(face = "italic"))
 
-ggsave(file.path(outpath_figs, "expression_tet_cpha.tiff"), dpi = 300, width = 6, height = 4, units = "in")
+ggsave(file.path(outpath_figs, "expression_tet_cpha.tiff"), dpi = 300, width = 6, height = 3.5, units = "in")
 
 
 ```
