@@ -1,8 +1,9 @@
-# archive
-/archive/
 
-# misc files
+/archive/
 *.zip
+*.DS_store
+
+# R stuff #
 
 # History files
 .Rhistory

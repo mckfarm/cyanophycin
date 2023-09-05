@@ -10,7 +10,8 @@ library(MetBrewer)
 library(gggenes)
 library(ggpubr)
 library(patchwork)
-library(rtracklayer)
+library(ggtext)
+# library(rtracklayer)
 
 source("./plotting.R")
 
@@ -89,17 +90,17 @@ saveRDS(tet_filt, file = file.path(outpath_figs, "tet_filt.RDS"))
 cphA, ppk, phaC for comparison
 ```{r}
 
-guide_cols <- c("goldenrod1", "seagreen3", "royalblue4")
+guide_cols <- c("goldenrod1", "violetred", "seagreen3", "royalblue4")
 
 guide_tpm <- guides(fill = guide_legend(title = NULL,
                                              override.aes = list(
                                                     color = guide_cols,
-                                                    shape = c(15, 15, 15), 
-                                                    size = c(3, 3, 3)),
+                                                    shape = c(15, 15, 15, 15), 
+                                                    size = c(3, 3, 3, 3)),
                                              ))
 
 tet_box <- 
-tet_filt %>% filter(product_short %in% c("cphA", "glgC", "ppk1")) %>%
+tet_filt %>% filter(product_short %in% c("cphA", "cphB", "glgC", "ppk1")) %>%
   group_by(product_short, bin, phase) %>% summarise(sum = sum(tpm)) %>%
   ggplot(data = ., aes(x = product_short, y = log10(sum), fill = product_short)) +
   facet_wrap(~ bin, nrow = 3) + 
@@ -114,16 +115,16 @@ tet_filt %>% filter(product_short %in% c("cphA", "glgC", "ppk1")) %>%
   theme(axis.text.x = element_text(face = "italic"))
   
 tet_time <-
-tet_filt %>% filter(product_short %in% c("cphA", "glgC", "ppk1")) %>%
+tet_filt %>% filter(product_short %in% c("cphA", "cphB", "glgC", "ppk1")) %>%
   ggplot(data = ., aes(x = phase, y = tpm, fill = product_short)) + 
   facet_grid(~bin, scales = "free") +
   geom_bar(stat = "identity", position = "dodge", key_glyph = "point") +
   scale_fill_manual(name = NULL, values = guide_cols,
-                    labels = c("*cphA*", "*glgC*", "*ppk1*")) +
+                    labels = c("*cphA*", "*cphB*", "*glgC*", "*ppk1*")) +
   scale_y_continuous(expand = expansion(mult = c(0, 0.05))) +
   labs(x = "Reactor Phase", y = "Transcripts per million reads") +
   theme_bw() + 
-  theme(legend.position = c(0.15, 0.8), 
+  theme(legend.position = c(0.15, 0.7), 
     axis.text.x = element_text(angle = 30, hjust = 0.9), 
     legend.box.background = element_rect(colour = "black")) +
   guide_tpm +

@@ -62,7 +62,7 @@ mags_summary <- bind_rows(cpha_mags, all_mags)
 bar_sum <- ggplot(mags_summary, 
        aes(x = factor(source), y = perc, label = perc, fill = ecosystem_type)) +
   geom_col(size=0.3) +
-  geom_text(position = position_stack(vjust = 0.5), color = "black", size = 3) + 
+  geom_text(position = position_stack(vjust = 0.5), color = "black", size = 4) + 
   scale_fill_manual(values = met.brewer("Hokusai3", 4),
                     labels = c("Activated sludge", "Anaerobic digester", 
                                "Industrial wastewater", "Nutrient removal"),
@@ -71,6 +71,8 @@ bar_sum <- ggplot(mags_summary,
   theme_bw() +
   labs(x = "", y = "Percent [%]", title = "") +
   theme(axis.text.x = ggtext::element_markdown())
+
+bar_sum
 
 ggsave(file.path(outpath, "GEM_distribution.tiff"), bar_sum, height = 4, width = 6, units = "in", dpi = 300)
   
@@ -93,13 +95,13 @@ ggplot(., aes(x=reorder(family, -count_of_fam))) +
 
 bar_gen <- 
 cyano_df %>% filter(cphA >= 1) %>%
-  group_by(genus) %>% mutate(count_of_gen = n()) %>% filter(count_of_gen > 1) %>% filter(genus != "unknown") %>%
+  group_by(genus) %>% mutate(count_of_gen = n()) %>% 
+  filter(count_of_gen > 1) %>% filter(genus != "unknown") %>%
 ggplot(., aes(x=reorder(genus, -count_of_gen))) +
   geom_bar(stat = "count", fill = "orange", alpha = 0.8) +
   coord_flip() +
   theme_bw() +
-  labs(y = "Count", x = "", title = "") +
-  theme(axis.text.y = element_text(face = "italic"))
+  labs(y = "Count", x = "", title = "")
 
 
 bar_fam / bar_gen

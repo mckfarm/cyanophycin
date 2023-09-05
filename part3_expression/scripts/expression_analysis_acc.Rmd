@@ -173,7 +173,7 @@ guide_cpha_box <- guides(fill = guide_legend(title = "B - Bin",
 wang_cpha_grid <- 
 ggplot(data = wang_tpm_filt %>% filter(product_short == "cphA"),
          aes(x = phase, y = tpm, fill = gene)) +
-  facet_grid( bin ~ carbon , scales = "free") +
+  facet_grid( carbon ~ bin ) +
   geom_bar(stat = "identity", position = "dodge", key_glyph = "point") +
   scale_fill_manual(values = met.brewer("OKeeffe2", 2)) +
   theme_bw() +
@@ -204,7 +204,7 @@ AACC
 wang_cpha_grid + wang_cpha_box + guide_area() + plot_layout(widths = c(1, 0.4), design = layout, guides = "collect") + 
   plot_annotation(tag_levels = "A")
 
-ggsave(file.path(outpath_figs, "expression_wang_cpha.tiff"), dpi = 300, width = 8, height = 6, units = "in")
+ggsave(file.path(outpath_figs, "expression_wang_cpha.tiff"), dpi = 300, width = 8, height = 5.5, units = "in")
 
 ```
 
