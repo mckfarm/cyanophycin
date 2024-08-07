@@ -1,0 +1,174 @@
+---
+title: "transcripts for IWA NRR"
+output: html_notebook
+---
+
+```{r}
+# package import
+library(tidyverse)
+library(MetBrewer)
+library(ggpubr)
+library(patchwork)
+library(ggtext)
+
+source("./plotting.R")
+
+outpath_figs <- "./part3_expression/results/nrr"
+
+```
+
+
+# Read in and cleaning
+Read in all abundance outputs from Kallisto and prokka, then clean and save to a big df
+
+```{r}
+
+path_data <- "./part3_expression/data/wang"
+
+samples <- read.table(file.path(path_data, "sample_list.txt"), header=TRUE)
+
+data_list <- list()
+
+for(i in 1:nrow(samples)) {
+  samples[["path"]][i] <- file.path(path_data, samples[["sample"]][i], "abundance.tsv")
+  tmp <- read.table(samples[["path"]][i], header=TRUE)
+  tmp[["sample"]] <- samples[["sample"]][i]
+  data_list[[i]] <- tmp
+  rm(tmp)
+}
+
+kallisto <- do.call(rbind, data_list)
+
+# refactor
+kallisto <- kallisto %>%
+  dplyr::rename(locus_tag = target_id)
+
+# prokka
+annotations <- read.csv(file.path(path_data, "all_annotations.csv"), header=TRUE)
+annotations <- annotations %>% filter(ftype=="CDS")
+
+# merge
+wang <- left_join(annotations, kallisto, by = "locus_tag") %>%
+  filter(bin != "Acc_IB") %>% # IB was a reference genome from a different study
+  separate(sample, c("phase", "carbon"), "_", remove = FALSE) %>%
+  mutate(carbon = ifelse(carbon == "ac", "Acetate", "Propionate")) %>%
+  mutate(bin = ifelse(bin == "Acc_IA", "ACC-IA", ifelse(bin == "Acc_IC", "ACC-IC", "ACC-IF"))) %>%
+  mutate(sample = factor(sample, 
+         levels = c("ana_ac", "anx_ac", "aer_ac", "ana_pr", "anx_pr", "aer_pr"))) %>%
+  mutate(phase = factor(phase, 
+         levels = c("ana", "anx", "aer")))
+
+# split sample column into phase and carbon source
+
+# manual ppk annotation 
+wang$product[wang$locus_tag == "BLJGAGFF_02569"] <- "Polyphosphate kinase"
+wang$gene[wang$locus_tag == "BLJGAGFF_02569"] <- "ppk"
+
+# clean up
+rm(data_list, samples, kallisto, annotations, path_data, i)
+
+
+```
+
+
+```{r}
+wang %>%
+  filter(product != "hypothetical protein") %>%
+  filter(!str_detect(gene, "_"))
+```
+
+
+
+# Analysis
+Filtering a few key functional genes for PAO
+```{r}
+wang_tpm_filt <- wang %>% 
+  filter(product %in% c("Cyanophycin synthetase", "Polyphosphate kinase", 
+                        "Poly(3-hydroxyalkanoate) polymerase subunit PhaC",
+                        "Glycogen synthase")) %>% 
+  mutate(product_short = case_when(product == "Cyanophycin synthetase" ~ "cphA",
+                                    product == "Polyphosphate kinase" ~ "ppk1",
+                                    product == "Poly(3-hydroxyalkanoate) polymerase subunit PhaC" ~ "phaC",
+                                    product == "Glycogen synthase" ~ "glgA"))
+```
+
+
+```{r}
+guide_cols <- c("goldenrod1", "seagreen3", "royalblue", "navy")
+
+guide_wang_tpm <- guides(fill = guide_legend(title = "", 
+                                             override.aes = list(
+                                                    color = guide_cols,
+                                                    shape = c(15, 15, 15, 15), 
+                                                    size = c(3, 3, 3, 3)),
+                                             nrow = 1))
+
+wang %>%
+  filter(product != "hypothetical protein") %>%
+  filter(str_detect(gene, "(?i)cphA|argT|artI|artM")) %>% 
+  filter(carbon == "Propionate") %>% 
+  group_by(product, bin, carbon, phase) %>% summarise(sum = sum(tpm)) %>%
+  ggplot(data = ., aes(x = phase, y = sum, fill = product)) +
+  facet_wrap(~ bin, nrow = 3) + 
+  geom_bar(stat = "identity", position = position_dodge()) + 
+  theme_bw() 
+  
+```
+
+
+
+## Expression plots
+cphA, ppk, phaC for comparison
+```{r fig.width = 4, fig.height = 6}
+
+guide_cols <- c("goldenrod1", "seagreen3", "royalblue", "navy")
+
+guide_wang_tpm <- guides(fill = guide_legend(title = "", 
+                                             override.aes = list(
+                                                    color = guide_cols,
+                                                    shape = c(15, 15, 15, 15), 
+                                                    size = c(3, 3, 3, 3)),
+                                             nrow = 1))
+  
+plt_bar <- 
+wang_tpm_filt %>% filter(product_short %in% c("cphA", "glgA", "phaC")) %>%
+  filter(carbon == "Propionate") %>% 
+  group_by(product_short, bin, carbon, phase) %>% summarise(sum = sum(tpm)) %>%
+  ggplot(data = ., aes(x = phase, y = log10(sum), fill = product_short)) +
+  facet_wrap(~ bin, nrow = 3) + 
+  geom_bar(stat = "identity", position = position_dodge()) + 
+  scale_fill_manual(values = guide_cols) +
+  theme_bw() + 
+  scale_y_continuous(expand = expansion(mult = c(0, 0.2)), limits = c(0,3)) + 
+  labs(x = "Gene", y = "Log10 Transcripts per million reads") +
+  guides(fill = "none") +
+  theme(axis.text.x = element_text(face = "italic"))
+
+plt_box <- 
+wang_tpm_filt %>% filter(product_short %in% c("cphA", "glgA", "phaC")) %>%
+  group_by(product_short, bin, carbon, phase) %>% summarise(sum = sum(tpm)) %>%
+  ggplot(data = ., aes(x = product_short, y = log10(sum), fill = product_short)) +
+  facet_wrap(~ bin, nrow = 3) + 
+  geom_boxplot(outlier.color = NA, lwd = 0.5) +
+  geom_jitter(alpha = 0.4) +
+  scale_fill_manual(values = guide_cols) +
+  theme_bw() + 
+  stat_compare_means(label = "p.signif",
+                  method = "wilcox", ref.group = "cphA") + 
+  scale_y_continuous(expand = expansion(mult = c(0, 0.2)), limits = c(0,3)) + 
+  labs(x = "Gene", y = "") +
+  guides(fill = "none") +
+  theme(axis.text.x = element_text(face = "italic"))
+
+
+(plt_bar + plt_box +
+    plot_layout(widths = c(1, 0.4), guides = "collect") &
+    theme(legend.position = "bottom", legend.box.background = element_rect(colour = "black"))) +
+  plot_annotation(tag_levels = "A")
+  
+
+# ggsave(file.path(outpath_figs, "expression_wang.tiff"), dpi = 300, width = 8, height = 6, units = "in")
+
+## https://stackoverflow.com/questions/64344106/combine-and-merge-legends-in-ggplot2-with-patchwork-discrete-categorical-data
+
+```

@@ -146,6 +146,30 @@ ggsave(file.path(outpath_figs, "expression_wang.tiff"), dpi = 300, width = 8, he
 ```
 
 ```{r}
+guide_cols <- c("goldenrod1", "seagreen3", "royalblue", "royalblue4")
+
+
+wang_tpm_filt %>% filter(product_short %in% c("cphA", "glgC", "phaC", "ppk1")) %>%
+  group_by(product_short, bin, carbon, phase) %>% summarise(sum = sum(tpm)) %>%
+  ggplot(data = ., aes(x = product_short, y = log10(sum), fill = product_short)) +
+  facet_wrap(~ bin) + 
+  geom_boxplot(outlier.color = NA, lwd = 0.5) +
+  geom_jitter(alpha = 0.4) +
+  scale_fill_manual(values = guide_cols) +
+  theme_bw() + 
+  stat_compare_means(label = "p.signif",
+                  method = "wilcox", ref.group = "cphA") + 
+  scale_y_continuous(expand = expansion(mult = c(0, 0.2))) + 
+  labs(x = "", y = "") +
+  theme(axis.text.x = element_text(face = "italic"), legend.position = "none")
+  
+ggsave(file.path(outpath_figs, "expression_wang_defense.tiff"), dpi = 300, width = 7, height = 2, units = "in")
+```
+
+
+
+
+```{r}
 wang_tpm_filt %>% filter(product_short %in% c("cphA", "glgC", "phaC", "ppk1")) %>%
   group_by(product_short, bin, carbon, phase) %>% summarise(sum = sum(tpm)) %>%
   compare_means(product_short ~ sum, data = ., method="wilcox")
@@ -206,6 +230,17 @@ wang_cpha_grid + wang_cpha_box + guide_area() + plot_layout(widths = c(1, 0.4), 
 
 ggsave(file.path(outpath_figs, "expression_wang_cpha.tiff"), dpi = 300, width = 8, height = 5.5, units = "in")
 
+```
+
+
+Sums check
+```{r}
+wang_tpm_filt %>% filter(product_short %in% c("cphA", "glgC", "phaC", "ppk1")) %>%
+  group_by(product_short, bin, carbon, phase) %>% summarise(sum = sum(tpm))
+
+
+wang_tpm_filt %>% filter(product_short %in% c("cphA")) %>%
+  group_by(gene, bin, carbon, phase) %>% summarise(sum = sum(tpm))
 ```
 
 

@@ -126,7 +126,7 @@ ggsave(plot = gene_clusters, file.path("part2_functionalgroups/results", "gene_m
   theme(plot.margin = margin(0,0,0,0, "cm")) + plot_layout(widths = c(1, 20)) 
 
 ggsave(file.path("part2_functionalgroups/results", "gene_map_combo.tiff"),
-       height = 5, width = 12, units = "in", dpi = 300)
+       height = 6, width = 12, units = "in", dpi = 210)
 
 ```
 

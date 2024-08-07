@@ -140,6 +140,25 @@ ggsave(file.path(outpath_figs, "expression_tet.tiff"), dpi = 300, width = 8, hei
 
 ```
 
+```{r}
+guide_cols <- c("goldenrod1", "violetred", "seagreen3", "royalblue4")
+
+tet_filt %>% filter(product_short %in% c("cphA", "cphB", "glgC", "ppk1")) %>%
+  group_by(product_short, bin, phase) %>% summarise(sum = sum(tpm)) %>%
+  ggplot(data = ., aes(x = product_short, y = log10(sum), fill = product_short)) +
+  facet_wrap(~ bin) + 
+  geom_boxplot(outlier.color = NA, lwd = 0.5, key_glyph = "point") +
+  geom_jitter(alpha = 0.4) +
+  scale_fill_manual(values = guide_cols) +
+  stat_compare_means(label = "p.signif",
+                  method = "wilcox", ref.group = "cphA") + 
+  scale_y_continuous(expand = expansion(mult = c(0.2, 0.2))) + 
+  labs(x = "", y = "") +
+  theme_bw() + guides(fill = "none") + 
+  theme(axis.text.x = element_text(face = "italic"))
+  
+ggsave(file.path(outpath_figs, "expression_mcdaniel_defense.tiff"), dpi = 300, width = 5, height = 2, units = "in")
+```
 
 
 
